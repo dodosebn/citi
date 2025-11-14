@@ -1,14 +1,38 @@
 "use client";
+
 import { usePersonalStore } from "@/app/store/usePersonalStore";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MdOutlineCancel } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 
 const PersonalCredentials = () => {
   const router = useRouter();
-  const { birthday, gender, pinValue, setBirthday, setGender, addPinDigit, clearPin, backspacePin, signupData } = usePersonalStore();
+  const {
+    birthday,
+    gender,
+    pinValue,
+    setBirthday,
+    setGender,
+    addPinDigit,
+    clearPin,
+    backspacePin,
+    signupData,
+  } = usePersonalStore();
   const [loading, setLoading] = useState(false);
+
+  // ✅ Keyboard support for PIN input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) addPinDigit(Number(e.key));
+      if (e.key === "Backspace") backspacePin();
+      if (e.key === "Delete") clearPin();
+      if (e.key === "Enter") handleFinalSignup();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [addPinDigit, backspacePin, clearPin]);
 
   const handleFinalSignup = async () => {
     if (!signupData) {
@@ -57,7 +81,6 @@ const PersonalCredentials = () => {
         }}
         className="w-full max-w-md bg-white shadow-md rounded-md p-6 space-y-5"
       >
-
         <div className="space-y-2">
           <label
             htmlFor="birthday"
@@ -129,7 +152,7 @@ const PersonalCredentials = () => {
               className="flex justify-center items-center h-12 bg-red-100 
               rounded-xl cursor-pointer hover:bg-red-200 transition col-span-1"
             >
-<MdOutlineCancel size={18} />
+              <MdOutlineCancel size={18} />
             </li>
 
             <li
@@ -141,7 +164,8 @@ const PersonalCredentials = () => {
             </li>
           </ul>
         </div>
-      <button
+
+        <button
           type="submit"
           disabled={loading}
           className="w-full bg-[#03305c] text-white py-3 rounded-md"
@@ -155,4 +179,3 @@ const PersonalCredentials = () => {
 };
 
 export default PersonalCredentials;
-  
