@@ -32,7 +32,7 @@ const Footer = () => {
           <p className="text-md leading-relaxed max-w-xl">
             If you are using a screen reader and having problems using this
             website, please call{" "}
-            <span className="font-semibold">+234 7069280208</span> for assistance or{" "}
+            <span className="font-semibold">+14703903270</span> for assistance or{" "}
             <Link href="/" className="underline hover:text-gray-200">
               click here
             </Link>{" "}
