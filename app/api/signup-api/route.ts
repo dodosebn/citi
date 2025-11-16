@@ -4,7 +4,16 @@ import { supabase } from "@/app/store/supabase";
 
 export async function POST(req: Request) {
   try {
-    const { fname, lname, email, password, birthday, gender, pin } = await req.json();
+    const {
+      fname,
+      lname,
+      email,
+      password,
+      birthday,
+      gender,
+      pin,
+      documents,
+    } = await req.json();
 
     if (!fname || !lname || !email || !password || !birthday || !gender || !pin) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -22,6 +31,9 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const documentPaths =
+      Array.isArray(documents) && documents.length > 0 ? documents : null;
+
     const { data: insertData, error: dbError } = await supabase
       .from("citisignup")
       .insert([
@@ -32,7 +44,8 @@ export async function POST(req: Request) {
           password: hashedPassword,
           birthday,
           gender,
-          pin
+          pin,
+          document_path: documentPaths, // save file paths
         },
       ])
       .select();

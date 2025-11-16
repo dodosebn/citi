@@ -26,6 +26,9 @@ export interface PersonalStore {
   gender: string;
   pinValue: string[];
   signupData: SignupData | null;
+    documentPath: string | null;  
+  setDocumentPath: (path: string | null) => void;
+
   setBirthday: (val: string) => void;
   setGender: (val: string) => void;
   addPinDigit: (num: number) => void;

@@ -2,7 +2,7 @@
 
 import { usePersonalStore } from "@/app/store/usePersonalStore";
 import React, { useState, useEffect } from "react";
-import { MdOutlineCancel } from "react-icons/md";
+import { MdKeyboardBackspace, MdOutlineCancel } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -17,59 +17,36 @@ const PersonalCredentials = () => {
     addPinDigit,
     clearPin,
     backspacePin,
-    signupData,
   } = usePersonalStore();
+
   const [loading, setLoading] = useState(false);
 
-  // ✅ Keyboard support for PIN input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isTypingInInput =
+        activeEl?.tagName === "INPUT" ||
+        activeEl?.tagName === "SELECT" ||
+        activeEl?.tagName === "TEXTAREA";
+
+      if (isTypingInInput) return; // ignore key presses while typing in fields
+
       if (/^[0-9]$/.test(e.key)) addPinDigit(Number(e.key));
       if (e.key === "Backspace") backspacePin();
       if (e.key === "Delete") clearPin();
-      if (e.key === "Enter") handleFinalSignup();
+      if (e.key === "Enter") goNext();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [addPinDigit, backspacePin, clearPin]);
 
-  const handleFinalSignup = async () => {
-    if (!signupData) {
-      toast.error("Missing signup data. Please start again.");
-      router.push("/account/signup");
-      return;
-    }
+  const goNext = () => {
     if (!birthday || !gender || pinValue.length !== 4) {
       toast.error("Please complete all fields.");
       return;
     }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/signup-api", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...signupData,
-          birthday,
-          gender,
-          pin: pinValue.join(""),
-        }),
-      });
-
-      const result = await res.json();
-      if (!res.ok) {
-        toast.error(result.error || "Signup failed");
-      } else {
-        toast.success("Account created successfully! Redirecting to login...");
-        setTimeout(() => router.push("/account/login"), 2000);
-      }
-    } catch (err) {
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    router.push("/account/upload");
   };
 
   return (
@@ -77,15 +54,12 @@ const PersonalCredentials = () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          handleFinalSignup();
+          goNext();
         }}
         className="w-full max-w-md bg-white shadow-md rounded-md p-6 space-y-5"
       >
         <div className="space-y-2">
-          <label
-            htmlFor="birthday"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">
             Enter your birthday
           </label>
           <input
@@ -98,10 +72,7 @@ const PersonalCredentials = () => {
         </div>
 
         <div className="space-y-2">
-          <label
-            htmlFor="gender"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
             Select your Gender
           </label>
           <select
@@ -112,9 +83,7 @@ const PersonalCredentials = () => {
           >
             <option value="">-- Choose one --</option>
             {["Male", "Female", "Rather Not Say"].map((item, index) => (
-              <option key={index} value={item}>
-                {item}
-              </option>
+              <option key={index} value={item}>{item}</option>
             ))}
           </select>
         </div>
@@ -124,10 +93,7 @@ const PersonalCredentials = () => {
             Create 4-digit Transaction PIN
           </label>
 
-          <div
-            className="flex justify-between px-4 py-2 text-xl font-bold tracking-widest
-           bg-gray-100 rounded-lg"
-          >
+          <div className="flex justify-between px-4 py-2 text-xl font-bold tracking-widest bg-gray-100 rounded-lg">
             {Array.from({ length: 4 }).map((_, i) => (
               <span key={i} className="w-5 text-center">
                 {pinValue[i] ?? "_"}
@@ -136,12 +102,11 @@ const PersonalCredentials = () => {
           </div>
 
           <ul className="grid grid-cols-3 gap-4 mt-4 text-lg font-semibold">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+            {[1,2,3,4,5,6,7,8,9,0].map((num) => (
               <li
                 key={num}
                 onClick={() => addPinDigit(num)}
-                className="flex justify-center items-center h-12 bg-indigo-100 
-                rounded-xl cursor-pointer hover:bg-indigo-200 transition"
+                className="flex justify-center items-center h-10 bg-indigo-100 cursor-pointer hover:bg-indigo-200 transition"
               >
                 {num}
               </li>
@@ -149,28 +114,22 @@ const PersonalCredentials = () => {
 
             <li
               onClick={backspacePin}
-              className="flex justify-center items-center h-12 bg-red-100 
-              rounded-xl cursor-pointer hover:bg-red-200 transition col-span-1"
+              className="flex justify-center items-center h-10 bg-red-100 cursor-pointer hover:bg-red-200 transition"
             >
               <MdOutlineCancel size={18} />
             </li>
 
             <li
               onClick={clearPin}
-              className="flex justify-center items-center h-12 bg-gray-200 
-              rounded-xl cursor-pointer hover:bg-gray-300 transition col-span-2"
+              className="flex justify-center items-center h-10 bg-gray-200 cursor-pointer hover:bg-gray-300 transition"
             >
-              Clear
+              <MdKeyboardBackspace />
             </li>
           </ul>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-[#03305c] text-white py-3 rounded-md"
-        >
-          {loading ? "Signing Up..." : "Finish Signup"}
+        <button type="submit" className="w-full bg-[#03305c] text-white py-3 rounded-md">
+          Next
         </button>
       </form>
       <ToastContainer />

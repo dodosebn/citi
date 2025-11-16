@@ -13,7 +13,7 @@ export interface User {
   accountBalance: number;   
   cardNumber?: string;    
   pin: number;
-}
+documentPath?: string;   }
 
 export interface Transaction {
   id: string;

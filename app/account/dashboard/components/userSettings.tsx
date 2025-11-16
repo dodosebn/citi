@@ -1,7 +1,7 @@
 import React from "react";
 import { User } from "../components/type";
 import Image, { StaticImageData } from "next/image";
-import { supabase } from "@/app/store/supabase"; // ensure this is a named export
+import { supabase } from "@/app/store/supabase";
 
 interface UserSettingsProps {
   user: User | null;
@@ -62,6 +62,18 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdateUser }) => {
           <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden">
             {getProfileDisplay()}
           </div>
+        </div>
+
+        {/* Display Document Path */}
+        <div>
+          <label className="block text-gray-700 mb-2">Uploaded Document</label>
+          <input
+            type="text"
+            name="document_path"
+            value={editedUser.documentPath || ""}
+            readOnly
+            className="w-full p-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
