@@ -6,9 +6,9 @@ export const usePersonalStore = create<PersonalStore>((set) => ({
   gender: "",
   pinValue: [],
   signupData: null,
-  documentPath: null,
+  document_path: null,
 
-  setDocumentPath: (path) => set({ documentPath: path }),
+  setDocumentPath: (path) => set({ document_path: path }),
   setBirthday: (val) => set({ birthday: val }),
   setGender: (val) => set({ gender: val }),
 

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const documentPaths =
+    const document_path =
       Array.isArray(documents) && documents.length > 0 ? documents : null;
 
     const { data: insertData, error: dbError } = await supabase
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
           birthday,
           gender,
           pin,
-          document_path: documentPaths, // save file paths
+          document_path: document_path, // save file paths
         },
       ])
       .select();

@@ -13,10 +13,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1️⃣ Generate OTP (6 digits)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 2️⃣ Save OTP to Supabase (expires in 5 mins)
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     const { error: otpError } = await supabase.from("otp_codes").insert({
@@ -43,7 +41,7 @@ export async function POST(req: Request) {
 
     // 4️⃣ Send OTP Email
     await transporter.sendMail({
-      from: `"City App" <${process.env.EMAIL}>`,
+      from: `"City Bank" <${process.env.EMAIL}>`,
       to: email,
       subject: "Your Verification OTP",
       text: `Your OTP is ${otp}. It will expire in 5 minutes.`,

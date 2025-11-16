@@ -70,7 +70,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdateUser }) => {
           <input
             type="text"
             name="document_path"
-            value={editedUser.documentPath || ""}
+            value={editedUser.document_path || ""}
             readOnly
             className="w-full p-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
           />
