@@ -9,7 +9,6 @@ import TransactionHistory from "./transactionalHis";
 import UserSettings from "./userSettings";
 import { useAppStore } from "@/app/store/useApp";
 import Layout from "../layout";
-import Transfer from "./transfer";
 import TransactionHis from "./transactionalHis";
 import Electricity from "./Elect/electricity";
 import ElectricityForm from "./Elect/electricityForm";
@@ -17,7 +16,7 @@ import LoanPage from "./loan/loanPage";
 import InvestmentsPage from "./investment/investment";
 import Pay from "../pay/pay";
 import PayForm from "../pay/payForm";
-
+import Transfer from './transfer';
 const BankingDetails: React.FC = () => {
   const { user, currentView, setUser } = useAppStore();
 

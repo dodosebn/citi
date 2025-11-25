@@ -32,14 +32,13 @@ export async function POST(req: Request) {
 
     // 3️⃣ Setup Nodemailer Transporter
     const transporter = nodemailer.createTransport({
-      service: "gmail", // For now (since you don’t have a domain)
+      service: "gmail",
       auth: {
         user: process.env.NODE_EMAIL,
-        pass: process.env.NODE_PASS, // MUST be App Password
+        pass: process.env.NODE_PASS, 
       },
     });
 
-    // 4️⃣ Send OTP Email
     await transporter.sendMail({
       from: `"City Bank" <${process.env.EMAIL}>`,
       to: email,
