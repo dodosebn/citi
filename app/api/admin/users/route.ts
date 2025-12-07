@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const { data, error } = await supabase
       .from("citisignup")
       .select(
-        "id, fname, lname, email, account_balance, account_number, card_number"
+        "id, fname, lname, email, account_balance, account_number, card_number, document_path"
       );
 
     if (error)

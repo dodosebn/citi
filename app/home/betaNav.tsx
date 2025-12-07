@@ -21,12 +21,12 @@ const BetaNav = () => {
       links: [
         {
           name: "Business Banking",
-          path: "home/small-business/business-banking",
+          path: "home/small-Business/business-banking",
         },
-        { name: "Business Loans", path: "home/small-business/business-loans" },
+        { name: "Business Loans", path: "home/small-Business/business-loans" },
         {
           name: "Merchant Services",
-          path: "home/small-business/merchant-services",
+          path: "home/small-Business/merchant-services",
         },
       ],
     },
@@ -35,15 +35,15 @@ const BetaNav = () => {
       links: [
         {
           name: "Wealth Management",
-          path: "home/institutional-investing/wealth-mgt",
+          path: "home/institutional-Investing/wealth-mgt",
         },
         {
           name: "Retirement Planning",
-          path: "home/institutional-investing/retirement-plan",
+          path: "home/institutional-Investing/retirement-plan",
         },
         {
           name: "Trust Services",
-          path: "home/institutional-investing/trust-services",
+          path: "home/institutional-Investing/trust-services",
         },
       ],
     },

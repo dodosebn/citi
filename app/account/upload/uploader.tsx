@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, Check, AlertCircle, FileText, Camera, Mail } from "lucide-react";
 import { usePersonalStore } from "@/app/store/usePersonalStore";
 import { useRouter } from "next/navigation";
@@ -44,6 +44,65 @@ const UpLoader: React.FC = () => {
     "application/pdf",
   ];
   const maxSize: number = 10 * 1024 * 1024; // 10MB
+
+  // Check if bucket exists on component mount
+  useEffect(() => {
+    checkBucketExists();
+  }, []);
+
+  const checkBucketExists = async () => {
+    try {
+      console.log("🔍 Checking if 'documents' bucket exists...");
+      
+      // List all buckets to see what's available
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error("❌ Error listing buckets:", bucketsError);
+        return;
+      }
+      
+      console.log("📦 Available buckets:", buckets);
+      
+      // Check specifically for 'documents' bucket
+      const documentsBucket = buckets?.find(bucket => bucket.name === "documents");
+      
+      if (documentsBucket) {
+        console.log("✅ 'documents' bucket found!");
+        
+        // Try to list files to verify access
+        const { data: files, error: filesError } = await supabase.storage
+          .from("documents")
+          .list();
+          
+        if (filesError) {
+          console.error("⚠️ Can't list files in bucket:", filesError);
+        } else {
+          console.log(`📄 Files in 'documents' bucket: ${files?.length || 0} files`);
+        }
+      } else {
+        console.error("❌ 'documents' bucket NOT FOUND!");
+        console.log("💡 Please create a bucket named 'documents' in Supabase Dashboard:");
+        console.log("   1. Go to https://supabase.com/dashboard");
+        console.log("   2. Select your project");
+        console.log("   3. Click 'Storage' in left sidebar");
+        console.log("   4. Click 'New Bucket'");
+        console.log("   5. Name it: documents");
+        console.log("   6. Set to Public");
+        console.log("   7. Click 'Create Bucket'");
+        
+        toast.error(
+          <div>
+            <strong>Bucket 'documents' not found!</strong><br />
+            Please create it in Supabase Dashboard → Storage
+          </div>,
+          { autoClose: 10000 }
+        );
+      }
+    } catch (error) {
+      console.error("🔥 Error checking bucket:", error);
+    }
+  };
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -134,30 +193,77 @@ const UpLoader: React.FC = () => {
     setOtpSending(true);
 
     try {
+      // DEBUG: Verify bucket before upload
+      console.log("🚀 Starting upload process...");
+      console.log("📁 Files to upload:", files.map(f => f.name));
+      
       // Step 1: Upload files to Supabase
       const paths: string[] = [];
 
       for (const item of files) {
         const file = item.file;
-        const filePath = `documents/${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
+        // Clean filename to avoid issues
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `documents/${Date.now()}-${Math.random().toString(36).slice(2)}-${cleanFileName}`;
 
-        const { error: uploadError } = await supabase.storage
+        console.log(`📤 Uploading: ${file.name} to path: ${filePath}`);
+        
+        // Add timeout for upload
+        const uploadPromise = supabase.storage
           .from("documents")
-          .upload(filePath, file, { upsert: true });
+          .upload(filePath, file, { 
+            upsert: true,
+            cacheControl: '3600'
+          });
+
+        // Timeout after 30 seconds
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Upload timeout after 30 seconds")), 30000)
+        );
+
+        const { data: uploadData, error: uploadError } = await Promise.race([
+          uploadPromise,
+          timeoutPromise
+        ]) as any;
 
         if (uploadError) {
-          toast.error("Failed to upload " + file.name + ": " + uploadError.message);
+          console.error("❌ Upload error details:", uploadError);
+          console.error("❌ Error message:", uploadError.message);
+          console.error("❌ Error code:", uploadError.code);
+          
+          let errorMessage = `Failed to upload ${file.name}: `;
+          
+          if (uploadError.message?.includes("Bucket not found")) {
+            errorMessage += "Bucket 'documents' not found. Please create it in Supabase Dashboard.";
+            toast.error(
+              <div>
+                <strong>Bucket 'documents' not found!</strong><br />
+                Create it in Supabase Dashboard → Storage → New Bucket
+              </div>,
+              { autoClose: 10000 }
+            );
+          } else {
+            errorMessage += uploadError.message;
+          }
+          
+          toast.error(errorMessage);
           setUploadStatus("error");
           setOtpSending(false);
+          
+          // Re-check bucket status
+          await checkBucketExists();
           return;
         }
 
+        console.log("✅ Upload successful:", uploadData);
         paths.push(filePath);
       }
 
       setUploadedPaths(paths);
+      console.log("📝 All upload paths:", paths);
 
       // Step 2: Send OTP to user's email
+      console.log("📧 Sending OTP to:", signupData.email);
       const otpRes = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,12 +273,14 @@ const UpLoader: React.FC = () => {
       const otpResult = await otpRes.json();
 
       if (!otpRes.ok) {
+        console.error("❌ OTP send error:", otpResult);
         toast.error(otpResult.error || "Failed to send OTP");
         setUploadStatus("error");
         setOtpSending(false);
         return;
       }
 
+      console.log("✅ OTP sent successfully!");
       toast.success("OTP sent to your email!");
       setUploadStatus("idle");
       setOtpSending(false);
@@ -182,7 +290,8 @@ const UpLoader: React.FC = () => {
       setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
 
     } catch (error) {
-      toast.error("Network error. Please try again.");
+      console.error("🔥 Network/Upload error:", error);
+      toast.error(`Upload error: ${error instanceof Error ? error.message : "Please try again"}`);
       setUploadStatus("error");
       setOtpSending(false);
     }
@@ -235,6 +344,7 @@ const UpLoader: React.FC = () => {
       return;
     }
 
+    console.log("🔐 Verifying OTP:", otpCode);
     setOtpVerifying(true);
 
     try {
@@ -250,10 +360,13 @@ const UpLoader: React.FC = () => {
         .single();
 
       if (otpError || !otpData) {
+        console.error("❌ OTP verification failed:", otpError);
         toast.error("Invalid or expired OTP");
         setOtpVerifying(false);
         return;
       }
+
+      console.log("✅ OTP verified, completing signup...");
 
       // OTP is valid, complete signup
       const res = await fetch("/api/signup-api", {
@@ -271,18 +384,21 @@ const UpLoader: React.FC = () => {
       const result = await res.json();
 
       if (!res.ok) {
+        console.error("❌ Signup API error:", result);
         toast.error(result.error || "Signup failed");
         setOtpVerifying(false);
       } else {
         // Delete used OTP
         await supabase.from("otp_codes").delete().eq("id", otpData.id);
 
+        console.log("✅ Signup complete! User:", result.user);
         toast.success("Signup complete! Redirecting to login...");
         setCurrentStep("complete");
         setUploadStatus("success");
         setTimeout(() => router.push("/account/login"), 2000);
       }
     } catch (error) {
+      console.error("🔥 OTP verification error:", error);
       toast.error("Network error. Please try again.");
       setOtpVerifying(false);
     }
@@ -292,6 +408,7 @@ const UpLoader: React.FC = () => {
   const handleResendOTP = async (): Promise<void> => {
     if (!signupData) return;
 
+    console.log("🔄 Resending OTP to:", signupData.email);
     setOtpSending(true);
     
     try {
@@ -304,17 +421,26 @@ const UpLoader: React.FC = () => {
       const otpResult = await otpRes.json();
 
       if (!otpRes.ok) {
+        console.error("❌ Resend OTP error:", otpResult);
         toast.error(otpResult.error || "Failed to resend OTP");
       } else {
+        console.log("✅ New OTP sent successfully");
         toast.success("New OTP sent to your email!");
         setOtp(["", "", "", "", "", ""]);
         otpInputRefs.current[0]?.focus();
       }
     } catch (error) {
+      console.error("🔥 Resend OTP network error:", error);
       toast.error("Failed to resend OTP");
     } finally {
       setOtpSending(false);
     }
+  };
+
+  // Test bucket connection button (for debugging)
+  const testBucketConnection = async () => {
+    console.log("🧪 Testing bucket connection...");
+    await checkBucketExists();
   };
 
   return (
@@ -333,6 +459,18 @@ const UpLoader: React.FC = () => {
               {currentStep === "complete" && "Your account has been created successfully"}
             </p>
           </div>
+
+          {/* Debug button - remove in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="px-8 pt-4">
+              <button
+                onClick={testBucketConnection}
+                className="text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-900"
+              >
+                🐛 Test Bucket Connection
+              </button>
+            </div>
+          )}
 
           <div className="p-8">
             {/* STEP 1: Upload Documents */}

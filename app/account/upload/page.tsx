@@ -15,7 +15,7 @@ const page = () => {
       <div className="absolute inset-0 bg-[#03305c]/90 opacity-90"></div>
      <div className="relative z-10 w-full max-w-xl">
         <UpLoader/>
-      </div>;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      </div>
       </div>
 )}
 

@@ -52,9 +52,9 @@ const Navbar = () => {
   const toggleDropdown = (index: number) => {
     setActiveDropdown(activeDropdown === index ? null : index);
   };
-const navItems = [{name:'Home', path: '/'},{name:'Contact us', path: '/'},
-  { name:'Locations', path: '/'}, 
-{name:'Investor Relations', path: '/'}, {name:'FAQs', path: '/'}]
+const navItems = [{name:'Home', path: '/'},{name:'Contact us', path: '/home/contactUs'},
+  { name:'Locations', path: '/home/location'}, 
+{name:'Investor Relations', path: 'home/investor-relation'}, {name:'FAQs', path: '/home/faq'}]
   return (
     <header className='bg-white'>
       {!isMobile && (

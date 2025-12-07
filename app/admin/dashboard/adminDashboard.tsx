@@ -54,11 +54,18 @@ export default function AdminDashboard() {
     fetchUsers();
   }, [adminToken]);
 
-  // Utility: get public URL from Supabase
+  // Utility: get public URL from Supabase - FIXED
   const getDocumentUrl = (path: string | null) => {
     if (!path) return null;
-    const { data } = supabase.storage.from("documents").getPublicUrl(path);
-    return data.publicUrl;
+    
+    try {
+      const { data } = supabase.storage.from("documents").getPublicUrl(path);
+      console.log("Generated URL for path:", path, "URL:", data.publicUrl);
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error generating public URL:", error);
+      return null;
+    }
   };
 
   const startEditing = (user: User) => {
@@ -191,24 +198,33 @@ export default function AdminDashboard() {
                     isImage ? (
                       <div
                         className="relative w-16 h-16 cursor-pointer"
-                        onClick={() => setSelectedImage(docUrl)}
+                        onClick={() => docUrl && setSelectedImage(docUrl)}
                       >
-                        <Image
-                          src={docUrl || ""}
-                          alt="document"
-                          layout="fill"
-                          objectFit="cover"
-                          className="rounded"
-                        />
+                        {docUrl ? (
+                          <Image
+                            src={docUrl}
+                            alt="document"
+                            fill
+                            sizes="64px"
+                            className="rounded object-cover"
+                            onError={(e) => {
+                              console.error("Image load error for:", docUrl);
+                              e.currentTarget.src = "/placeholder-image.jpg";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
+                            <span className="text-xs text-gray-500">No image</span>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <button
                         className="bg-gray-300 px-2 py-1 rounded"
-                        onClick={() =>
-                          window.open(docUrl ?? undefined, "_blank")
-                        }
+                        onClick={() => docUrl && window.open(docUrl, "_blank")}
+                        disabled={!docUrl}
                       >
-                        Open Doc
+                        {docUrl ? "Open Doc" : "No document"}
                       </button>
                     )
                   ) : (
@@ -339,9 +355,14 @@ export default function AdminDashboard() {
             <Image
               src={selectedImage}
               alt="Preview"
-              layout="fill"
-              objectFit="contain"
-              className="rounded"
+              fill
+              sizes="90vw"
+              className="rounded object-contain"
+              onError={(e) => {
+                console.error("Fullscreen image load error:", selectedImage);
+                toast.error("Failed to load image");
+                setSelectedImage(null);
+              }}
             />
           </div>
         </div>
