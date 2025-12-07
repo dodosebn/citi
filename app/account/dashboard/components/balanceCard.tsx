@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Account, User } from "../components/type";
 import Image, { StaticImageData } from "next/image";
 import { FaArrowCircleUp, FaEye, FaEyeSlash } from "react-icons/fa";
@@ -15,8 +15,52 @@ interface BalanceCardProps {
 
 const BalanceCard: React.FC<BalanceCardProps> = ({ account, user }) => {
   const [showAmount, setShowAmount] = useState(false);
+  const [greeting, setGreeting] = useState("Hello");
+  const [currentTime, setCurrentTime] = useState("");
 
   const toggleBalance = () => setShowAmount((prev) => !prev);
+
+  // Function to get time-based greeting with emoji
+  const getTimeBasedGreeting = (): { greeting: string; emoji: string } => {
+    const hour = new Date().getHours();
+    
+    if (hour >= 5 && hour < 12) {
+      return { greeting: "Good morning", emoji: "☀️" };
+    } else if (hour >= 12 && hour < 17) {
+      return { greeting: "Good afternoon", emoji: "🌤️" };
+    } else if (hour >= 17 && hour < 21) {
+      return { greeting: "Good evening", emoji: "🌙" };
+    } else {
+      return { greeting: "Good night", emoji: "🌃" };
+    }
+  };
+
+  // Format time for display
+  const formatTime = (): string => {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  // Update time and greeting
+  useEffect(() => {
+    const updateTimeAndGreeting = () => {
+      const now = new Date();
+      const { greeting, emoji } = getTimeBasedGreeting();
+      setGreeting(`${greeting} ${emoji}`);
+      setCurrentTime(formatTime());
+    };
+
+    // Initial update
+    updateTimeAndGreeting();
+    
+    const interval = setInterval(updateTimeAndGreeting, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const profileSrc =
     user?.profilePicture &&
@@ -60,12 +104,13 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ account, user }) => {
           </div>
           <div className="text-center mt-2 flex justify-center">
             <h1 className="text-gray-400">
-              Hi {user ? user.firstName : "Guest"}
+              {greeting}, {user ? user.firstName : "Guest"}
             </h1>
           </div>
         </div>
         <div className="md:flex flex-col hidden">
-          <p className="text-gray-500 text-sm mt-2">{account.lastUpdated}</p>
+          <p className="text-gray-500 text-sm mt-2">{currentTime}</p>
+          {/* <p className="text-gray-400 text-xs">{account.lastUpdated}</p> */}
         </div>
       </div>
 
@@ -81,7 +126,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ account, user }) => {
                 : "****"}
             </p>
             <p className="text-gray-500 text-sm mt-2 md:hidden flex">
-              Last Updated: {account.timeUpdated}
+              {currentTime} • Updated: {account.timeUpdated}
             </p>
           </div>
           <div
@@ -107,7 +152,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ account, user }) => {
 
           <div className="flex flex-row items-center gap-1 bg-[#053464] px-2 py-1">
             <CiCirclePlus size={24} />
-            <button className=" text-white px-4 py-2 ">Add Money</button>
+            <Link className=" text-white px-4 py-2 " href={"/account/dashboard/addMoney"}>Add Money</Link>
           </div>
         </section>
       </div>

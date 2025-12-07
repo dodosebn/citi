@@ -5,6 +5,7 @@ import { Upload, X, Check, AlertCircle, FileText, Camera, Mail } from "lucide-re
 import { usePersonalStore } from "@/app/store/usePersonalStore";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { supabase } from "@/app/store/supabase";
 
 interface FileWithPreview {
@@ -83,13 +84,6 @@ const UpLoader: React.FC = () => {
       } else {
         console.error("❌ 'documents' bucket NOT FOUND!");
         console.log("💡 Please create a bucket named 'documents' in Supabase Dashboard:");
-        console.log("   1. Go to https://supabase.com/dashboard");
-        console.log("   2. Select your project");
-        console.log("   3. Click 'Storage' in left sidebar");
-        console.log("   4. Click 'New Bucket'");
-        console.log("   5. Name it: documents");
-        console.log("   6. Set to Public");
-        console.log("   7. Click 'Create Bucket'");
         
         toast.error(
           <div>
@@ -189,47 +183,67 @@ const UpLoader: React.FC = () => {
       return;
     }
 
+    // Show confirmation toast before starting
+    toast.info(
+      <div>
+        <strong>Starting Upload Process</strong>
+        <br />
+        <small>Preparing to upload {files.length} file(s)...</small>
+      </div>,
+      { autoClose: 3000 }
+    );
+
     setUploadStatus("uploading");
     setOtpSending(true);
 
     try {
-      // DEBUG: Verify bucket before upload
       console.log("🚀 Starting upload process...");
       console.log("📁 Files to upload:", files.map(f => f.name));
       
       // Step 1: Upload files to Supabase
       const paths: string[] = [];
+      let uploadSuccessCount = 0;
 
-      for (const item of files) {
+      for (const [index, item] of files.entries()) {
         const file = item.file;
         // Clean filename to avoid issues
-        const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const filePath = `documents/${Date.now()}-${Math.random().toString(36).slice(2)}-${cleanFileName}`;
-
-        console.log(`📤 Uploading: ${file.name} to path: ${filePath}`);
+        const cleanFileName = file.name
+          .toLowerCase()
+          .replace(/[^a-z0-9._-]/g, '_')
+          .replace(/\s+/g, '_')
+          .replace(/_+/g, '_')
+          .substring(0, 100);
         
-        // Add timeout for upload
-        const uploadPromise = supabase.storage
+        const filePath = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${cleanFileName}`;
+
+        console.log(`📤 Uploading (${index + 1}/${files.length}): ${file.name}`);
+        
+        // Show progress toast
+        const progress = Math.round(((index + 1) / files.length) * 100);
+        toast.info(
+          <div>
+            <div className="font-semibold">Uploading Files</div>
+            <div className="text-sm opacity-90">File {index + 1} of {files.length}: {file.name}</div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="text-xs mt-1">{progress}% complete</div>
+          </div>,
+          { autoClose: 2000 }
+        );
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from("documents")
           .upload(filePath, file, { 
             upsert: true,
             cacheControl: '3600'
           });
 
-        // Timeout after 30 seconds
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Upload timeout after 30 seconds")), 30000)
-        );
-
-        const { data: uploadData, error: uploadError } = await Promise.race([
-          uploadPromise,
-          timeoutPromise
-        ]) as any;
-
         if (uploadError) {
           console.error("❌ Upload error details:", uploadError);
-          console.error("❌ Error message:", uploadError.message);
-          console.error("❌ Error code:", uploadError.code);
           
           let errorMessage = `Failed to upload ${file.name}: `;
           
@@ -242,25 +256,58 @@ const UpLoader: React.FC = () => {
               </div>,
               { autoClose: 10000 }
             );
+          } else if (uploadError.message?.includes("Invalid key")) {
+            errorMessage += "Filename contains invalid characters. Please rename the file.";
+            toast.error(
+              <div>
+                <strong>Invalid Filename</strong><br />
+                Please rename "{file.name}" to remove special characters
+              </div>,
+              { autoClose: 8000 }
+            );
           } else {
             errorMessage += uploadError.message;
+            toast.error(errorMessage, { autoClose: 5000 });
           }
           
-          toast.error(errorMessage);
           setUploadStatus("error");
           setOtpSending(false);
-          
-          // Re-check bucket status
-          await checkBucketExists();
           return;
         }
 
         console.log("✅ Upload successful:", uploadData);
         paths.push(filePath);
+        uploadSuccessCount++;
       }
+
+      // All uploads successful
+      toast.success(
+        <div>
+          <strong>Upload Complete! ✅</strong>
+          <br />
+          <small>Successfully uploaded {uploadSuccessCount} file(s)</small>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 3000,
+        }
+      );
 
       setUploadedPaths(paths);
       console.log("📝 All upload paths:", paths);
+
+      // Small delay before showing OTP sending toast
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Show OTP sending toast
+      toast.info(
+        <div>
+          <strong>Sending OTP</strong>
+          <br />
+          <small>Sending verification code to your email...</small>
+        </div>,
+        { autoClose: 2000 }
+      );
 
       // Step 2: Send OTP to user's email
       console.log("📧 Sending OTP to:", signupData.email);
@@ -280,8 +327,21 @@ const UpLoader: React.FC = () => {
         return;
       }
 
+      // OTP sent successfully
+      toast.success(
+        <div>
+          <strong>OTP Sent! ✉️</strong>
+          <br />
+          <small>Check your email for the 6-digit verification code</small>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: 5000,
+          closeButton: true,
+        }
+      );
+
       console.log("✅ OTP sent successfully!");
-      toast.success("OTP sent to your email!");
       setUploadStatus("idle");
       setOtpSending(false);
       setCurrentStep("otp");
@@ -291,7 +351,10 @@ const UpLoader: React.FC = () => {
 
     } catch (error) {
       console.error("🔥 Network/Upload error:", error);
-      toast.error(`Upload error: ${error instanceof Error ? error.message : "Please try again"}`);
+      toast.error(
+        `Upload failed: ${error instanceof Error ? error.message : "Please try again"}`,
+        { autoClose: 5000 }
+      );
       setUploadStatus("error");
       setOtpSending(false);
     }
@@ -345,6 +408,10 @@ const UpLoader: React.FC = () => {
     }
 
     console.log("🔐 Verifying OTP:", otpCode);
+    
+    // Show verifying toast
+    toast.info("Verifying OTP...", { autoClose: 2000 });
+    
     setOtpVerifying(true);
 
     try {
@@ -361,12 +428,15 @@ const UpLoader: React.FC = () => {
 
       if (otpError || !otpData) {
         console.error("❌ OTP verification failed:", otpError);
-        toast.error("Invalid or expired OTP");
+        toast.error("Invalid or expired OTP. Please try again.");
         setOtpVerifying(false);
         return;
       }
 
       console.log("✅ OTP verified, completing signup...");
+      
+      // Show signup in progress toast
+      toast.info("Completing your signup...", { autoClose: 2000 });
 
       // OTP is valid, complete signup
       const res = await fetch("/api/signup-api", {
@@ -392,10 +462,23 @@ const UpLoader: React.FC = () => {
         await supabase.from("otp_codes").delete().eq("id", otpData.id);
 
         console.log("✅ Signup complete! User:", result.user);
-        toast.success("Signup complete! Redirecting to login...");
+        
+        // Success toast with countdown
+        toast.success(
+          <div>
+            <strong>🎉 Signup Complete!</strong>
+            <br />
+            <small>Redirecting to login in 3 seconds...</small>
+          </div>,
+          {
+            position: "top-center",
+            autoClose: 3000,
+          }
+        );
+        
         setCurrentStep("complete");
         setUploadStatus("success");
-        setTimeout(() => router.push("/account/login"), 2000);
+        setTimeout(() => router.push("/account/login"), 3000);
       }
     } catch (error) {
       console.error("🔥 OTP verification error:", error);
@@ -409,6 +492,10 @@ const UpLoader: React.FC = () => {
     if (!signupData) return;
 
     console.log("🔄 Resending OTP to:", signupData.email);
+    
+    // Show sending toast
+    toast.info("Sending new OTP...", { autoClose: 2000 });
+    
     setOtpSending(true);
     
     try {
@@ -437,12 +524,6 @@ const UpLoader: React.FC = () => {
     }
   };
 
-  // Test bucket connection button (for debugging)
-  const testBucketConnection = async () => {
-    console.log("🧪 Testing bucket connection...");
-    await checkBucketExists();
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -459,18 +540,6 @@ const UpLoader: React.FC = () => {
               {currentStep === "complete" && "Your account has been created successfully"}
             </p>
           </div>
-
-          {/* Debug button - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="px-8 pt-4">
-              <button
-                onClick={testBucketConnection}
-                className="text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-900"
-              >
-                🐛 Test Bucket Connection
-              </button>
-            </div>
-          )}
 
           <div className="p-8">
             {/* STEP 1: Upload Documents */}
@@ -591,7 +660,6 @@ const UpLoader: React.FC = () => {
               </>
             )}
 
-            {/* STEP 2: OTP Verification */}
             {currentStep === "otp" && (
               <>
                 <div className="flex flex-col items-center py-8">
@@ -671,7 +739,18 @@ const UpLoader: React.FC = () => {
         </div>
       </div>
 
-      <ToastContainer />
+      <ToastContainer 
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 };
