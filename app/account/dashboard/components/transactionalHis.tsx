@@ -106,7 +106,7 @@ export default function TransactionHis({ userId }: { userId: string }) {
       const csvContent = [
         ['Date', 'Type', 'Amount', 'Description', 'Status', 'Reference'],
         ...transactions.map(t => [
-          new Date(t.date).toLocaleString(),
+          formatDate(t.date),
           t.type,
           `$${t.amount.toFixed(2)}`,
           t.description,
@@ -133,19 +133,28 @@ export default function TransactionHis({ userId }: { userId: string }) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Format as mm/dd/yy
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 01-12
+    const day = String(date.getDate()).padStart(2, '0'); // 01-31
+    const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+    
+    return `${month}/${day}/${year}`;
+  };
 
-    if (diffDays === 0) {
-      return 'Today, ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 1) {
-      return 'Yesterday, ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays <= 7) {
-      return date.toLocaleDateString('en-US', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    // Format as mm/dd/yy, hh:mm AM/PM
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    
+    return `${month}/${day}/${year}, ${hours}:${minutes} ${ampm}`;
   };
 
   return (
@@ -224,7 +233,7 @@ export default function TransactionHis({ userId }: { userId: string }) {
                     </div>
                     <div>
                       <p className="font-medium text-gray-800">{t.description}</p>
-                      <p className="text-sm text-gray-500">{formatDate(t.date)}</p>
+                      <p className="text-sm text-gray-500">{formatDateTime(t.date)}</p>
                       {t.status && (
                         <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${t.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
                           {t.status}
