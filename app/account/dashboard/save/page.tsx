@@ -17,7 +17,9 @@ import {
   FaDollarSign,
   FaWallet,
   FaLock,
-  FaUnlock
+  FaUnlock,
+  FaTrash,
+  FaExclamationTriangle
 } from "react-icons/fa";
 
 type SavingsPlan = {
@@ -55,8 +57,10 @@ export default function SavingsPage() {
   const [savingsAmount, setSavingsAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [selectedSavingId, setSelectedSavingId] = useState<string | null>(null);
+  const [savingToDelete, setSavingToDelete] = useState<UserSaving | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<"plans" | "my-savings">("plans");
   
@@ -131,6 +135,11 @@ export default function SavingsPage() {
     setIsWithdrawModalOpen(true);
   };
 
+  const handleDeleteClick = (saving: UserSaving) => {
+    setSavingToDelete(saving);
+    setIsDeleteModalOpen(true);
+  };
+
   const generateReference = () => {
     return 'SAV' + Date.now() + Math.random().toString(36).substr(2, 9).toUpperCase();
   };
@@ -186,7 +195,7 @@ export default function SavingsPage() {
       // 3. Record transaction - Use "debit" type for saving money (money leaving main account)
       const transactionData = {
         user_id: user.id,
-        type: "debit", // Using "debit" for money going out of main account
+        type: "debit",
         amount: amount,
         description: `Savings deposit to ${selectedPlan.name}`,
         status: "completed",
@@ -305,7 +314,7 @@ export default function SavingsPage() {
       // 3. Record transaction - Use "credit" type for withdrawal (money coming into main account)
       const transactionData = {
         user_id: user.id,
-        type: "credit", // Using "credit" for money coming into main account
+        type: "credit",
         amount: netWithdrawal,
         description: `Savings withdrawal${penaltyFee > 0 ? ` (penalty: $${penaltyFee.toFixed(2)})` : ''}`,
         status: "completed",
@@ -359,6 +368,99 @@ export default function SavingsPage() {
       setProcessing(false);
     }
   };
+
+// UPDATED handleDeleteSavings function
+const handleDeleteSavings = async () => {
+  if (!savingToDelete || !user?.id) return;
+
+  const saving = savingToDelete;
+  setProcessing(true);
+
+  try {
+    const plan = saving.savings_plans;
+    let penaltyFee = 0;
+    let refundAmount = saving.total_balance;
+
+    // Check for early withdrawal penalty if deleting before minimum duration
+    if (plan && saving.days_since_start && saving.days_since_start < plan.min_duration_days) {
+      penaltyFee = (saving.total_balance * plan.withdrawal_fee) / 100;
+      refundAmount = saving.total_balance - penaltyFee;
+      toast.warning(`Early deletion penalty applied: $${penaltyFee.toFixed(2)}`);
+    }
+
+    // 1. FIRST delete related savings_transactions
+    const { error: deleteTransactionsError } = await supabase
+      .from("savings_transactions")
+      .delete()
+      .eq("savings_id", saving.id);
+
+    if (deleteTransactionsError) {
+      console.error("Error deleting transactions:", deleteTransactionsError);
+      // If we can't delete transactions, we can't delete the savings account
+      throw new Error("Failed to delete related transactions. Please try again.");
+    }
+
+    // 2. THEN delete from user_savings
+    const { error: deleteError } = await supabase
+      .from("user_savings")
+      .delete()
+      .eq("id", saving.id);
+
+    if (deleteError) throw deleteError;
+
+    // 3. Add refund to user balance
+    const currentUserBalance = user?.accountBalance ?? 0;
+    const newUserBalance = currentUserBalance + refundAmount;
+    
+    const { error: balanceError } = await supabase
+      .from("citisignup")
+      .update({ account_balance: newUserBalance })
+      .eq("id", user.id);
+
+    if (balanceError) throw balanceError;
+
+    // 4. Record transaction for refund
+    const transactionData = {
+      user_id: user.id,
+      type: "credit",
+      amount: refundAmount,
+      description: `Savings account deletion${penaltyFee > 0 ? ` (penalty: $${penaltyFee.toFixed(2)})` : ''}`,
+      status: "completed",
+      category: "savings",
+      recipient: "Main Account",
+      sender: "Savings Account",
+      reference: generateReference(),
+      created_at: new Date().toISOString()
+    };
+
+    const { error: txError } = await supabase
+      .from("transactions")
+      .insert(transactionData);
+
+    if (txError) throw txError;
+
+    // Update local state
+    useAppStore.setState((prev: any) => ({
+      user: {
+        ...prev.user,
+        accountBalance: newUserBalance,
+      },
+    }));
+
+    toast.success(`Savings account deleted. $${refundAmount.toLocaleString()} refunded to your balance.`);
+    
+    // Refresh data
+    await fetchSavingsData();
+    setIsDeleteModalOpen(false);
+    setSavingToDelete(null);
+
+  } catch (error: any) {
+    console.error("Delete error:", error);
+    toast.error(error.message || "Failed to delete savings account");
+  } finally {
+    setProcessing(false);
+  }
+};
 
   const getTotalSavings = () => {
     return userSavings
@@ -671,27 +773,36 @@ export default function SavingsPage() {
                         </div>
 
                         {/* Action Buttons */}
-                        {saving.status === 'active' && (
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => handleWithdrawClick(saving)}
-                              className="flex-1 bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
-                            >
-                              <FaArrowDown className="mr-2" />
-                              Withdraw
-                            </button>
-                            <button
-                              onClick={() => {
-                                // Add more money to this savings
-                                toast.info("Add more money feature coming soon!");
-                              }}
-                              className="flex-1 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                            >
-                              <FaArrowUp className="mr-2" />
-                              Add More
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex gap-3 flex-wrap">
+                          {saving.status === 'active' && (
+                            <>
+                              <button
+                                onClick={() => handleWithdrawClick(saving)}
+                                className="flex-1 bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
+                              >
+                                <FaArrowDown className="mr-2" />
+                                Withdraw
+                              </button>
+                              <button
+                                onClick={() => {
+                                  // Add more money to this savings
+                                  toast.info("Add more money feature coming soon!");
+                                }}
+                                className="flex-1 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                              >
+                                <FaArrowUp className="mr-2" />
+                                Add More
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => handleDeleteClick(saving)}
+                            className="flex-1 bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-colors flex items-center justify-center"
+                          >
+                            <FaTrash className="mr-2" />
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -855,6 +966,126 @@ export default function SavingsPage() {
                     </>
                   ) : (
                     `Withdraw $${parseFloat(withdrawAmount || '0').toLocaleString()}`
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Savings Modal */}
+        {isDeleteModalOpen && savingToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-scale-in">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Delete Savings Account
+                </h3>
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  disabled={processing}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                  <div className="flex items-center text-red-800 mb-2">
+                    <FaExclamationTriangle className="mr-2" />
+                    <span className="font-semibold">Warning</span>
+                  </div>
+                  <p className="text-sm text-red-700">
+                    This action will permanently delete your savings account and refund the balance to your main account.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Account:</span>
+                      <p className="font-semibold text-blue-700">
+                        {savingToDelete.savings_plans?.name || "Savings Account"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Current Balance:</span>
+                      <p className="font-semibold">
+                        ${savingToDelete.total_balance.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {savingToDelete.savings_plans && savingToDelete.days_since_start && 
+                 savingToDelete.days_since_start < savingToDelete.savings_plans.min_duration_days && (
+                  <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                    <div className="flex items-center text-yellow-800 mb-2">
+                      <FaClock className="mr-2" />
+                      <span className="font-semibold">Early Deletion Penalty</span>
+                    </div>
+                    <p className="text-sm text-yellow-700">
+                      You are deleting before the minimum duration ({savingToDelete.savings_plans.min_duration_days} days). 
+                      A penalty of {savingToDelete.savings_plans.withdrawal_fee}% will be applied.
+                    </p>
+                  </div>
+                )}
+
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h4 className="font-semibold text-green-800 mb-2">
+                    Refund Summary
+                  </h4>
+                  <div className="text-sm text-green-700">
+                    {(() => {
+                      const plan = savingToDelete.savings_plans;
+                      let penaltyFee = 0;
+                      let refundAmount = savingToDelete.total_balance;
+
+                      if (plan && savingToDelete.days_since_start && 
+                          savingToDelete.days_since_start < plan.min_duration_days) {
+                        penaltyFee = (savingToDelete.total_balance * plan.withdrawal_fee) / 100;
+                        refundAmount = savingToDelete.total_balance - penaltyFee;
+                      }
+
+                      return (
+                        <>
+                          <p className="mb-1">Total Balance: ${savingToDelete.total_balance.toLocaleString()}</p>
+                          {penaltyFee > 0 && (
+                            <p className="mb-1 text-yellow-600">
+                              Penalty: -${penaltyFee.toFixed(2)}
+                            </p>
+                          )}
+                          <p className="font-bold">
+                            Refund Amount: ${refundAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-400 transition-colors"
+                  disabled={processing}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteSavings}
+                  disabled={processing}
+                  className="flex-1 bg-red-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {processing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Account'
                   )}
                 </button>
               </div>
