@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 import { Copy, Download, Printer, X } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "react-toastify";
+import PrintTransaction from "./printTransaction";
 
 export interface Transaction {
   id: string;
@@ -222,11 +223,10 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
           </div>
         </div>
       </div>
-
+<PrintTransaction transaction={transaction} formatDate={formatDate} />
       {/* Modal Overlay */}
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-          {/* Header */}
           <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
             <h3 className="text-lg font-bold">Transaction Details</h3>
             <button

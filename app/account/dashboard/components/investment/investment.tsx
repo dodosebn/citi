@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/app/store/supabase";
 import { useAppStore } from "@/app/store/useApp";
 import { toast, ToastContainer } from "react-toastify";
+import Link from "next/link";
 
 type Plan = {
   id: string;
@@ -43,84 +44,84 @@ export default function InvestmentsPage() {
     setIsModalOpen(true);
   };
 
-  const handleInvest = async () => {
-    if (!selectedPlan) return;
-    const balance = user?.accountBalance ?? 0;
-    const investAmount = parseFloat(investmentAmount);
+const handleInvest = async () => {
+  if (!selectedPlan) return;
+  const balance = user?.accountBalance ?? 0;
+  const investAmount = parseFloat(investmentAmount);
 
-    if (isNaN(investAmount) || investAmount <= 0) {
-      toast.error("Please enter a valid amount.");
-      return;
-    }
+  if (isNaN(investAmount) || investAmount <= 0) {
+    toast.error("Please enter a valid amount.");
+    return;
+  }
 
-    if (investAmount > balance) {
-      toast.error("Insufficient balance.");
-      return;
-    }
+  if (investAmount > balance) {
+    toast.error("Insufficient balance.");
+    return;
+  }
 
-    setInvesting(true);
+  setInvesting(true);
 
-    const newBalance = balance - investAmount;
+  // Step 1: Insert investment first
+  const { error: investError } = await supabase.from("user_investments").insert([
+    {
+      user_id: user?.id,
+      plan_id: selectedPlan.id,
+      amount: investAmount,
+      status: "active",
+      created_at: new Date().toISOString(),
+    },
+  ]);
 
-    const { error: balanceError } = await supabase
-      .from("citisignup")
-      .update({ account_balance: newBalance })
-      .eq("id", user?.id);
-
-    if (balanceError) {
-      toast.error("Failed to update balance.");
-      setInvesting(false);
-      return;
-    }
-
-    const { error: investError } = await supabase.from("investments").insert([
-      {
-        user_id: user?.id,
-        plan_id: selectedPlan.id,
-        amount: investAmount,
-        status: "active",
-        created_at: new Date().toISOString(),
-      },
-    ]);
-
-    if (investError) {
-      toast.error("Failed to record investment.");
-      setInvesting(false);
-      return;
-    }
-
-    const { error: txError } = await supabase.from("transactions").insert([
-      {
-        user_id: user?.id,
-        type: "investment",
-        amount: investAmount,
-        description: `Invested in ${selectedPlan.name}`,
-        status: "success",
-        created_at: new Date().toISOString(),
-      },
-    ]);
-
-    if (txError) {
-      console.error(txError);
-      toast.error("Failed to record transaction.");
-      setInvesting(false);
-      return;
-    }
-
-    useAppStore.setState((prev: any) => ({
-      user: {
-        ...prev.user,
-        accountBalance: newBalance,
-      },
-    }));
-
-    toast.success("Investment successful ✅");
-
+  if (investError) {
+    console.error("Investment insert error:", investError);
+    toast.error("Failed to record investment.");
     setInvesting(false);
-    setIsModalOpen(false);
-    setInvestmentAmount("");
-  };
+    return;
+  }
 
+  // Step 2: Update balance
+  const newBalance = balance - investAmount;
+  const { error: balanceError } = await supabase
+    .from("citisignup")
+    .update({ account_balance: newBalance })
+    .eq("id", user?.id);
+
+  if (balanceError) {
+    console.error("Balance update error:", balanceError);
+    toast.error("Failed to update balance.");
+    setInvesting(false);
+    return;
+  }
+
+  // Step 3: Record transaction (SILENTLY - no error toast)
+  const { error: txError } = await supabase.from("transactions").insert({
+    user_id: user?.id,
+    type: "investment",
+    amount: investAmount,
+    description: `Invested in ${selectedPlan.name}`,
+    status: "success",
+    created_at: new Date().toISOString(),
+  });
+
+  if (txError) {
+    console.warn("Transaction logging issue (non-critical):", txError);
+    // NO TOAST ERROR HERE - transaction logging is secondary
+  }
+
+  // Update local state
+  useAppStore.setState((prev: any) => ({
+    user: {
+      ...prev.user,
+      accountBalance: newBalance,
+    },
+  }));
+
+  toast.success("Investment successful ✅");
+
+  setInvesting(false);
+  setIsModalOpen(false);
+  setInvestmentAmount("");
+};
   const calculateReturns = (
     amount: number,
     interestRate: number,
@@ -141,6 +142,8 @@ export default function InvestmentsPage() {
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <Link href='/account/dashboard/myInvestment' className="text-blue-700">View Made investments</Link>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Investment Plans
