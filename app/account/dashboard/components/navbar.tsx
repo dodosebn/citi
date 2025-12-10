@@ -48,18 +48,16 @@ const Navbar: React.FC<NavbarProps> = ({
       icon: <FaRegSave size={18} />,
       pat: "/account/dashboard/save",
     },
-    { id: "card", label: "Card", icon: <FaCreditCard size={18} /> }, 
+    { id: "card", label: "Card", icon: <FaCreditCard size={18} />, pat: "/account/dashboard/card" }, 
   ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-20 bg-white shadow-sm z-50">
       <div className="max-w-7xl mx-auto md:px-10 px-4 h-full flex items-center justify-between">
-        {/* Logo */}
         <div className="flex items-center gap-2">
           <Image src={Logo} alt="logo" width={100} height={36} priority />
         </div>
 
-        {/* Desktop Menu */}
         <ul className="hidden md:flex items-center gap-3">
           {menuItems.map((item) => (
             <li key={item.id}>
@@ -95,7 +93,6 @@ const Navbar: React.FC<NavbarProps> = ({
           ))}
         </ul>
 
-        {/* Desktop Profile */}
         <Link
           href="/account/dashboard/settings"
           className="hidden md:flex gap-3 items-center cursor-pointer"
@@ -118,7 +115,6 @@ const Navbar: React.FC<NavbarProps> = ({
           <div className="text-gray-600 font-medium">Account</div>
         </Link>
 
-        {/* Mobile Profile */}
         <div className="md:hidden block">
           <Link
             href="/account/dashboard/settings"

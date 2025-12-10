@@ -1,12 +1,25 @@
 import React from 'react'
 import AdminLogin from './adminLogin'
+import foot from "@/public/images/admin-bg.jpg";
 
 const page = () => {
   return (
-    <div>
-        <AdminLogin/>
-    </div>
-  )
-}
+   
+    <div
+      className="relative min-h-screen flex items-center justify-center"
+      style={{
+        backgroundImage: `url(${foot.src})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-[#03305c]/90 opacity-90"></div>
 
-export default page
+      <div className="relative z-10 w-full max-w-md">
+        <AdminLogin/>
+      </div>
+    </div>
+  );
+};
+
+export default page;

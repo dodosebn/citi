@@ -24,85 +24,97 @@ interface TransactionDetailsProps {
   onClose: () => void;
 }
 
-export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, onClose }) => {
+export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
+  transaction,
+  onClose,
+}) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const shareToWhatsApp = () => {
-    const message = 
+    const message =
       `💰 Transaction Details\n\n` +
-      `Type: ${transaction.type === 'debit' ? 'Debit' : 'Credit'}\n` +
+      `Type: ${transaction.type === "debit" ? "Debit" : "Credit"}\n` +
       `Amount: $${transaction.amount.toFixed(2)}\n` +
       `Description: ${transaction.description}\n` +
       `Date: ${formatDate(transaction.date)}\n` +
-      `Status: ${transaction.status || 'Completed'}\n` +
-      `${transaction.reference ? `Reference: ${transaction.reference}\n` : ''}`;
-    
+      `Status: ${transaction.status || "Completed"}\n` +
+      `${transaction.reference ? `Reference: ${transaction.reference}\n` : ""}`;
+
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
   };
 
   const copyToClipboard = () => {
-    const text = 
+    const text =
       `Transaction ID: ${transaction.id}\n` +
       `Amount: $${transaction.amount.toFixed(2)}\n` +
       `Type: ${transaction.type}\n` +
       `Date: ${formatDate(transaction.date)}\n` +
       `Description: ${transaction.description}\n` +
-      `Status: ${transaction.status || 'completed'}\n` +
-      `Reference: ${transaction.reference || 'N/A'}`;
-    
-    navigator.clipboard.writeText(text)
+      `Status: ${transaction.status || "completed"}\n` +
+      `Reference: ${transaction.reference || "N/A"}`;
+
+    navigator.clipboard
+      .writeText(text)
       .then(() => toast.success("Transaction details copied!"))
       .catch(() => toast.error("Failed to copy"));
   };
 
   const downloadAsPDF = async () => {
-    const element = document.getElementById(`transaction-details-${transaction.id}`);
+    const element = document.getElementById(
+      `transaction-details-${transaction.id}`
+    );
     if (!element) return;
 
     toast.info("Generating PDF...", { autoClose: 2000 });
 
     try {
       const canvas = await html2canvas(element);
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 190;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+
+      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
       pdf.save(`transaction-${transaction.id}-${new Date().getTime()}.pdf`);
-      
+
       toast.success("PDF downloaded successfully!");
     } catch (error) {
-      console.error('PDF generation error:', error);
+      console.error("PDF generation error:", error);
       toast.error("Failed to generate PDF");
     }
   };
 
   const printTransaction = () => {
-    const element = document.getElementById(`transaction-details-${transaction.id}`);
+    const element = document.getElementById(
+      `transaction-details-${transaction.id}`
+    );
     if (!element) return;
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(`
         <html>
@@ -149,13 +161,17 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
                   <span class="label">Description:</span>
                   <span>${transaction.description}</span>
                 </div>
-                ${transaction.reference ? `<div class="row">
+                ${
+                  transaction.reference
+                    ? `<div class="row">
                   <span class="label">Reference:</span>
                   <span>${transaction.reference}</span>
-                </div>` : ''}
+                </div>`
+                    : ""
+                }
                 <div class="row">
                   <span class="label">Status:</span>
-                  <span>${transaction.status || 'Completed'}</span>
+                  <span>${transaction.status || "Completed"}</span>
                 </div>
               </div>
               <div class="footer">
@@ -174,7 +190,6 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
 
   return (
     <>
-      {/* Hidden element for PDF generation */}
       <div id={`transaction-details-${transaction.id}`} className="hidden">
         <div className="p-6 max-w-md">
           <div className="text-center mb-6">
@@ -192,13 +207,21 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
             </div>
             <div className="flex justify-between">
               <span className="font-semibold">Type:</span>
-              <span className={`font-bold ${transaction.type === 'debit' ? 'text-red-600' : 'text-green-600'}`}>
+              <span
+                className={`font-bold ${
+                  transaction.type === "debit"
+                    ? "text-red-600"
+                    : "text-green-600"
+                }`}
+              >
                 {transaction.type.toUpperCase()}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="font-semibold">Amount:</span>
-              <span className="text-xl font-bold">${transaction.amount.toFixed(2)}</span>
+              <span className="text-xl font-bold">
+                ${transaction.amount.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="font-semibold">Description:</span>
@@ -212,8 +235,12 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
             )}
             <div className="flex justify-between">
               <span className="font-semibold">Status:</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
-                {transaction.status || 'Completed'}
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  transaction.status
+                )}`}
+              >
+                {transaction.status || "Completed"}
               </span>
             </div>
           </div>
@@ -223,13 +250,19 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
           </div>
         </div>
       </div>
-<PrintTransaction transaction={transaction} formatDate={formatDate} />
+      <PrintTransaction transaction={transaction} formatDate={formatDate} />
       {/* Modal Overlay */}
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-x-hidden">
-          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-            <h3 className="text-lg font-bold">Transaction Details</h3>
-            <button
+          <div className="sticky top-0 bg-white p-4 flex justify-between items-center">
+    <img src="/images/logo.png" className="h-20 w-20" />
+
+    <h2 className="text-xl font-bold w-full text-center">
+      {transaction.description}
+    </h2>
+
+   
+              <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full"
             >
@@ -238,26 +271,37 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
           </div>
 
           {/* Content */}
-          <div className="p-4 overflow-y-auto">
+          <div className="px-4 overflow-y-auto">
+ 
             <div className="text-center mb-6">
-              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 ${
-                transaction.type === 'debit' ? 'bg-red-100' : 'bg-green-100'
-              }`}>
-                <span className={`text-2xl font-bold ${
-                  transaction.type === 'debit' ? 'text-red-600' : 'text-green-600'
-                }`}>
-                  {transaction.type === 'debit' ? '-' : '+'}${transaction.amount.toFixed(2)}
+              <div
+                className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 ${
+                  transaction.type === "debit" ? "bg-red-100" : "bg-green-100"
+                }`}
+              >
+                <span
+                  className={`text-2xl font-bold ${
+                    transaction.type === "debit"
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
+                  {transaction.type === "debit" ? "-" : "+"}$
+                  {transaction.amount.toFixed(2)}
                 </span>
               </div>
-              <h2 className="text-xl font-bold">{transaction.description}</h2>
-              <p className="text-gray-600 text-sm mt-1">{formatDate(transaction.date)}</p>
+              <p className="text-gray-600 text-sm mt-1">
+                {formatDate(transaction.date)}
+              </p>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <span className="font-medium">Transaction ID</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono">{transaction.id.slice(0, 8)}...</span>
+                  <span className="text-sm font-mono">
+                    {transaction.id.slice(0, 8)}...
+                  </span>
                   <button
                     onClick={copyToClipboard}
                     className="p-1 hover:bg-gray-200 rounded"
@@ -275,8 +319,12 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
                 </div>
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500">Status</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
-                    {transaction.status || 'Completed'}
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      transaction.status
+                    )}`}
+                  >
+                    {transaction.status || "Completed"}
                   </span>
                 </div>
               </div>
@@ -305,7 +353,9 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transact
               {transaction.category && (
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500">Category</p>
-                  <p className="font-semibold capitalize">{transaction.category}</p>
+                  <p className="font-semibold capitalize">
+                    {transaction.category}
+                  </p>
                 </div>
               )}
             </div>

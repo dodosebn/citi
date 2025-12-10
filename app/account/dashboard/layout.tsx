@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import Header from "./components/header";
 import Navbar from "./components/navbar";
 import MobileUp from "./components/mobileUp";
 import { useAppStore } from "@/app/store/useApp";
@@ -22,8 +21,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         setCurrentView={setCurrentView}
       />
       <MobileUp currentView={currentView} setCurrentView={setCurrentView} />
-      <main className="flex-1 md:px-20 px-2 pt-3 pb-5">
-        <Header currentView={currentView} />
+     
+      <main className="flex-1 md:px-20 px-2 pt-8 pb-5">
+        {/* <Header currentView={currentView} /> */}
         {children}
       </main>
     </div>

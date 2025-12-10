@@ -1,25 +1,25 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { RiFileCopy2Line, RiArrowLeftLine } from "react-icons/ri";
-import { TbHomeFilled } from "react-icons/tb";
-import { FaChevronDown, FaSearch, FaShieldAlt } from "react-icons/fa";
+import { RiArrowLeftLine } from "react-icons/ri";
 import { Banks } from "./data/bank";
 import { useAppStore } from "@/app/store/useApp";
 import { supabase } from "@/app/store/supabase";
+import ProgressSteps from "./transfer/progressSteps";
+import { Bank, FormStep } from "./transfer/type";
+import { FaShieldAlt } from "react-icons/fa";
+import StepBankDetails from "./transfer/steps/stepBankDetails";
+import RecipientInfo from "./transfer/steps/recipientInfo";
+import Amount from "./transfer/steps/amount";
+import PinVerification from "./transfer/steps/pinVerification";
+import Confirmation from "./transfer/steps/confirmation";
 
-interface Bank {
-  NAME: string;
-  REGION: string;
-  COUNTRY: string;
-  NOTE: string;
-}
 
 interface RecipientDetails {
   name: string;
   email: string;
 }
 
-type FormStep = "bank-details" | "recipient-info" | "amount" | "pin-verification" | "confirmation";
+
 
 const Transfer = () => {
   const [query, setQuery] = useState("");
@@ -47,7 +47,7 @@ const Transfer = () => {
   >("pending");
 
   const pinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const clickOutside = (e: MouseEvent) => {
@@ -119,9 +119,9 @@ const Transfer = () => {
   const verifyBankDetails = async () => {
     setIsVerifying(true);
     await new Promise((r) => setTimeout(r, 1000));
-    
+
     const isValid = accountNumber.length >= 10 && selectedBank;
-    
+
     if (isValid) {
       setVerificationStatus("success");
       setCurrentStep("recipient-info");
@@ -152,97 +152,430 @@ const Transfer = () => {
     }
   };
 
-  const sendEmailNotification = async (
-    toEmail: string,
-    toName: string,
-    type: "sender" | "recipient",
-    details: {
-      amount: number;
-      senderName: string;
-      senderEmail: string;
-      recipientName: string;
-      recipientEmail: string;
-      bank: string;
-      accountNumber: string;
-      transactionId: string;
-      date: string;
-      description: string;
-      newBalance?: number;
-    }
-  ) => {
-    try {
-      const subject =
-        type === "sender"
-          ? `Transfer Confirmation - $${details.amount.toFixed(2)} Sent`
-          : `Money Received - $${details.amount.toFixed(2)}`;
+ const sendEmailNotification = async (
+  toEmail: string,
+  toName: string,
+  type: "sender" | "recipient",
+  details: {
+    amount: number;
+    senderName: string;
+    senderEmail: string;
+    recipientName: string;
+    recipientEmail: string;
+    bank: string;
+    accountNumber: string;
+    transactionId: string;
+    date: string;
+    description: string;
+    newBalance?: number;
+  }
+) => {
+  try {
+    const subject =
+      type === "sender"
+        ? `Transfer Confirmation - $${details.amount.toFixed(2)} Sent`
+        : `Money Received - $${details.amount.toFixed(2)}`;
 
-      const senderMessage = `
-        <h2>Transfer Successful!</h2>
-        <p>Dear ${details.senderName},</p>
-        <p>You have successfully transferred <strong>$${details.amount.toFixed(
-          2
-        )}</strong> to:</p>
-        <ul>
-          <li><strong>Recipient:</strong> ${details.recipientName}</li>
-          <li><strong>Bank:</strong> ${details.bank}</li>
-          <li><strong>Account Number:</strong> ${details.accountNumber}</li>
-          <li><strong>Transaction ID:</strong> ${details.transactionId}</li>
-          <li><strong>Date:</strong> ${details.date}</li>
-          <li><strong>Description:</strong> ${
-            details.description || "No description provided"
-          }</li>
-          ${
-            details.newBalance
-              ? `<li><strong>Your New Balance:</strong> $${details.newBalance.toFixed(
-                  2
-                )}</li>`
-              : ""
+    // Receipt-style CSS for emails
+    const receiptStyles = `
+      <style>
+        .receipt-container {
+          font-family: 'Courier New', Courier, monospace, Arial, sans-serif;
+          max-width: 600px;
+          margin: 0 auto;
+          background: #ffffff;
+          border: 2px solid #1a237e;
+          border-radius: 8px;
+          overflow: hidden;
+          padding: 0;
+        }
+        .receipt-header {
+          background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+          color: white;
+          padding: 20px;
+          text-align: center;
+          border-bottom: 3px solid #3949ab;
+        }
+        .receipt-header h1 {
+          margin: 0 0 10px 0;
+          font-size: 24px;
+          font-weight: bold;
+        }
+        .receipt-header p {
+          margin: 5px 0;
+          font-size: 14px;
+          opacity: 0.9;
+        }
+        .receipt-logo {
+          max-width: 150px;
+          height: auto;
+          margin-bottom: 15px;
+        }
+        .receipt-body {
+          padding: 25px;
+        }
+        .receipt-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px dashed #e0e0e0;
+          font-size: 14px;
+        }
+        .receipt-label {
+          font-weight: bold;
+          color: #333;
+          min-width: 180px;
+        }
+        .receipt-value {
+          text-align: right;
+          color: #555;
+          font-family: 'Courier New', monospace;
+        }
+        .receipt-divider {
+          height: 2px;
+          background: repeating-linear-gradient(
+            to right,
+            transparent,
+            transparent 5px,
+            #ccc 5px,
+            #ccc 10px
+          );
+          margin: 20px 0;
+        }
+        .receipt-total {
+          display: flex;
+          justify-content: space-between;
+          padding: 15px 0;
+          border-top: 3px double #333;
+          border-bottom: 3px double #333;
+          font-weight: bold;
+          font-size: 18px;
+          background: #f8f9fa;
+          margin: 20px 0;
+        }
+        .receipt-footer {
+          text-align: center;
+          padding: 20px 0 0;
+          color: #666;
+          font-size: 12px;
+          border-top: 1px solid #eee;
+          margin-top: 20px;
+        }
+        .receipt-footer p {
+          margin: 5px 0;
+        }
+        .receipt-success {
+          background: #e8f5e9;
+          color: #2e7d32;
+          padding: 12px;
+          border-radius: 4px;
+          text-align: center;
+          font-weight: bold;
+          margin-bottom: 20px;
+          border-left: 4px solid #4caf50;
+        }
+        .receipt-warning {
+          background: #fff3e0;
+          color: #f57c00;
+          padding: 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          margin-top: 20px;
+          border-left: 4px solid #ff9800;
+        }
+        .receipt-id {
+          background: #f5f5f5;
+          padding: 10px;
+          border-radius: 4px;
+          font-family: monospace;
+          letter-spacing: 1px;
+          text-align: center;
+          margin: 15px 0;
+          border: 1px dashed #ccc;
+        }
+        .receipt-date {
+          text-align: center;
+          color: #666;
+          font-size: 13px;
+          margin: 10px 0;
+          padding: 10px;
+          background: #f9f9f9;
+          border-radius: 4px;
+        }
+        @media (max-width: 600px) {
+          .receipt-row {
+            flex-direction: column;
           }
-        </ul>
-        <p>Thank you for banking with us!</p>
-      `;
+          .receipt-label {
+            margin-bottom: 5px;
+          }
+          .receipt-value {
+            text-align: left;
+          }
+        }
+      </style>
+    `;
 
-      const recipientMessage = `
-        <h2>Money Received!</h2>
-        <p>Dear ${details.recipientName},</p>
-        <p>You have received <strong>$${details.amount.toFixed(
-          2
-        )}</strong> from:</p>
-        <ul>
-          <li><strong>Sender:</strong> ${details.senderName}</li>
-          <li><strong>Sender's Bank:</strong> ${details.bank}</li>
-          <li><strong>Transaction ID:</strong> ${details.transactionId}</li>
-          <li><strong>Date:</strong> ${details.date}</li>
-          <li><strong>Reference:</strong> ${
-            details.description || "Bank Transfer"
-          }</li>
-        </ul>
-        <p>The funds should reflect in your account shortly.</p>
-        <p>If you have any questions, please contact our support team.</p>
-      `;
+    const senderMessage = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ${receiptStyles}
+    </head>
+    <body style="margin: 0; padding: 20px; background: #f5f7fa;">
+      <div class="receipt-container">
+        
+        <!-- Header -->
+        <div class="receipt-header">
+          <img src="https://citi-zeta.vercel.app/images/logo.png" alt="Citibank Logo" class="receipt-logo" />
+          <h1>Citibank</h1>
+          <p>Electronic Funds Transfer Receipt</p>
+          <div class="receipt-date">
+            ${details.date}
+          </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="receipt-body">
+          
+          <!-- Success Message -->
+          <div class="receipt-success">
+            ✓ TRANSFER COMPLETED SUCCESSFULLY
+          </div>
+          
+          <!-- Transaction ID -->
+          <div class="receipt-id">
+            Transaction ID: ${details.transactionId}
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Sender Info -->
+          <div class="receipt-row">
+            <span class="receipt-label">Sender:</span>
+            <span class="receipt-value">${details.senderName}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Sender Email:</span>
+            <span class="receipt-value">${details.senderEmail}</span>
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Recipient Info -->
+          <div class="receipt-row">
+            <span class="receipt-label">Recipient:</span>
+            <span class="receipt-value">${details.recipientName}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Recipient Bank:</span>
+            <span class="receipt-value">${details.bank}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Account Number:</span>
+            <span class="receipt-value">${details.accountNumber}</span>
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Transaction Details -->
+          <div class="receipt-row">
+            <span class="receipt-label">Description:</span>
+            <span class="receipt-value">${details.description || "Bank Transfer"}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Status:</span>
+            <span class="receipt-value" style="color: #4CAF50;">Completed</span>
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Amount Section -->
+          <div class="receipt-total">
+            <span>Amount Transferred:</span>
+            <span style="color: #1a237e;">$${details.amount.toFixed(2)}</span>
+          </div>
+          
+          <!-- Balance Update -->
+          ${details.newBalance ? `
+          <div class="receipt-row">
+            <span class="receipt-label">Previous Balance:</span>
+            <span class="receipt-value">$${(details.newBalance + details.amount).toFixed(2)}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">New Balance:</span>
+            <span class="receipt-value" style="color: #1a237e; font-weight: bold;">$${details.newBalance.toFixed(2)}</span>
+          </div>
+          ` : ''}
+          
+          <!-- Footer -->
+          <div class="receipt-footer">
+            <p>This is an automated receipt for your records.</p>
+            <p>Please keep this email for future reference.</p>
+            <p>For any inquiries, contact: support@citibank.com</p>
+            <p style="font-size: 11px; color: #999; margin-top: 15px;">
+              Transaction Ref: ${details.transactionId}<br>
+              Generated: ${new Date().toISOString()}
+            </p>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- Print Warning -->
+      <div class="receipt-warning" style="max-width: 600px; margin: 20px auto;">
+        <strong>Important:</strong> This email contains sensitive financial information. 
+        Please do not share this receipt with unauthorized parties.
+      </div>
+      
+    </body>
+    </html>
+    `;
 
-      const emailData = {
-        to: toEmail,
-        subject,
-        html: type === "sender" ? senderMessage : recipientMessage,
-      };
+    const recipientMessage = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ${receiptStyles}
+    </head>
+    <body style="margin: 0; padding: 20px; background: #f5f7fa;">
+      <div class="receipt-container">
+        
+        <!-- Header -->
+        <div class="receipt-header">
+          <img src="https://citi-zeta.vercel.app/images/logo.png" alt="Citibank Logo" class="receipt-logo" />
+          <h1>Citibank</h1>
+          <p>Funds Received Notification</p>
+          <div class="receipt-date">
+            ${details.date}
+          </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="receipt-body">
+          
+          <!-- Success Message -->
+          <div class="receipt-success">
+            ✓ FUNDS SUCCESSFULLY RECEIVED
+          </div>
+          
+          <!-- Transaction ID -->
+          <div class="receipt-id">
+            Transaction ID: ${details.transactionId}
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Recipient Info -->
+          <div class="receipt-row">
+            <span class="receipt-label">Recipient:</span>
+            <span class="receipt-value">${details.recipientName}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Recipient Email:</span>
+            <span class="receipt-value">${details.recipientEmail}</span>
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Sender Info -->
+          <div class="receipt-row">
+            <span class="receipt-label">Sender:</span>
+            <span class="receipt-value">${details.senderName}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Sender Bank:</span>
+            <span class="receipt-value">${details.bank}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Sender Email:</span>
+            <span class="receipt-value">${details.senderEmail}</span>
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Transaction Details -->
+          <div class="receipt-row">
+            <span class="receipt-label">Reference:</span>
+            <span class="receipt-value">${details.description || "Bank Transfer"}</span>
+          </div>
+          
+          <div class="receipt-row">
+            <span class="receipt-label">Status:</span>
+            <span class="receipt-value" style="color: #4CAF50;">Funds Received</span>
+          </div>
+          
+          <div class="receipt-divider"></div>
+          
+          <!-- Amount Section -->
+          <div class="receipt-total">
+            <span>Amount Received:</span>
+            <span style="color: #1a237e;">$${details.amount.toFixed(2)}</span>
+          </div>
+          
+          <!-- Processing Info -->
+          <div class="receipt-row">
+            <span class="receipt-label">Processing Time:</span>
+            <span class="receipt-value">1-2 Business Days</span>
+          </div>
+          
+          <!-- Footer -->
+          <div class="receipt-footer">
+            <p>This is an official notification of funds received.</p>
+            <p>The funds should reflect in your account within 1-2 business days.</p>
+            <p>For any inquiries, contact: support@citibank.com</p>
+            <p style="font-size: 11px; color: #999; margin-top: 15px;">
+              Transaction Ref: ${details.transactionId}<br>
+              Generated: ${new Date().toISOString()}
+            </p>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- Important Notice -->
+      <div class="receipt-warning" style="max-width: 600px; margin: 20px auto;">
+        <strong>Note:</strong> This transfer is initiated by the sender. 
+        If you were not expecting this payment, please contact your bank immediately.
+      </div>
+      
+    </body>
+    </html>
+    `;
 
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(emailData),
-      });
+    const emailData = {
+      to: toEmail,
+      subject,
+      html: type === "sender" ? senderMessage : recipientMessage,
+    };
 
-      if (!response.ok) {
-        console.error("Failed to send email");
-      }
-    } catch (error) {
-      console.error("Email sending error:", error);
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to send email");
     }
-  };
-
+  } catch (error) {
+    console.error("Email sending error:", error);
+  }
+};
   const verifyPin = async (enteredPin: string) => {
     const balance = BALANCE ?? 0;
     setIsProcessing(true);
@@ -325,7 +658,7 @@ const Transfer = () => {
       try {
         await sendEmailNotification(
           user?.email || "",
-          user?.firstName|| "Customer",
+          user?.firstName || "Customer",
           "sender",
           emailDetails
         );
@@ -401,40 +734,8 @@ const Transfer = () => {
                 <span className="text-sm">Secure</span>
               </div>
             </div>
-            
-            {/* Progress Steps */}
-            <div className="mt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === "bank-details" ? "bg-white text-blue-600" : currentStep === "recipient-info" || currentStep === "amount" || currentStep === "pin-verification" || currentStep === "confirmation" ? "bg-green-500 text-white" : "bg-blue-400 text-white"}`}>
-                    1
-                  </div>
-                  <span className="text-xs mt-1">Bank Details</span>
-                </div>
-                <div className="flex-1 h-1 mx-2 bg-blue-400"></div>
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === "recipient-info" ? "bg-white text-blue-600" : currentStep === "amount" || currentStep === "pin-verification" || currentStep === "confirmation" ? "bg-green-500 text-white" : "bg-blue-400 text-white"}`}>
-                    2
-                  </div>
-                  <span className="text-xs mt-1">Recipient</span>
-                </div>
-                <div className="flex-1 h-1 mx-2 bg-blue-400"></div>
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === "amount" ? "bg-white text-blue-600" : currentStep === "pin-verification" || currentStep === "confirmation" ? "bg-green-500 text-white" : "bg-blue-400 text-white"}`}>
-                    3
-                  </div>
-                  <span className="text-xs mt-1">Amount</span>
-                </div>
-                <div className="flex-1 h-1 mx-2 bg-blue-400"></div>
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === "pin-verification" ? "bg-white text-blue-600" : currentStep === "confirmation" ? "bg-green-500 text-white" : "bg-blue-400 text-white"}`}>
-                    4
-                  </div>
-                  <span className="text-xs mt-1">Confirm</span>
-                </div>
-              </div>
-            </div>
-          </div>
+                    <ProgressSteps currentStep={currentStep} />
+        </div>  
 
           <form
             className="p-6 space-y-6"
@@ -446,465 +747,79 @@ const Transfer = () => {
             }}
           >
             {currentStep === "bank-details" && (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">
-                    Account Number
-                  </label>
-                  <div className="flex border rounded-xl overflow-hidden">
-                    <input
-                      type="text"
-                      value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
-                      className="flex-grow px-4 py-3 outline-none"
-                      placeholder="Enter account number"
-                    />
-                    <button
-                      type="button"
-                      onClick={handlePaste}
-                      className={`px-4 ${
-                        isCopied ? "text-green-600" : "text-gray-600"
-                      }`}
-                    >
-                      {isCopied ? "Copied!" : <RiFileCopy2Line />}
-                    </button>
-                  </div>
-                </div>
-
-                <div ref={dropdownRef}>
-                  <label className="block text-sm font-semibold mb-2">
-                    Bank Name
-                  </label>
-                  <div className="relative">
-                    <div className="flex border rounded-xl px-4">
-                      <div className="mt-4">
-                        <TbHomeFilled className="text-gray-400 mr-2" />
-                      </div>
-                      <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => handleSearch(e.target.value)}
-                        onBlur={handleCustomBankInput}
-                        onFocus={() =>
-                          query && banks.length > 0 && setIsDropdownOpen(true)
-                        }
-                        placeholder="Search or type bank name..."
-                        className="flex-grow py-3 outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        disabled={banks.length === 0}
-                      >
-                        <FaChevronDown
-                          className={isDropdownOpen ? "rotate-180" : ""}
-                        />
-                      </button>
-                    </div>
-                    {isDropdownOpen && (
-                      <ul className="absolute z-10 w-full bg-white border rounded-xl mt-2 max-h-60 overflow-y-auto shadow-lg">
-                        {banks.length > 0 ? (
-                          banks.map((b, i) => (
-                            <li
-                              key={i}
-                              className="px-4 py-2 hover:bg-blue-50 cursor-pointer"
-                              onClick={() => handleBankSelect(b.NAME)}
-                            >
-                              {b.NAME}{" "}
-                              <span className="text-sm text-gray-500">
-                                ({b.REGION})
-                              </span>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="p-4 text-gray-400 text-center">
-                            No banks found. You can type any bank name.
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                  {selectedBank &&
-                    !Banks.some((bank) => bank.NAME === selectedBank) && (
-                      <p className="text-sm text-blue-600 mt-2">
-                        Using custom bank:{" "}
-                        <span className="font-semibold">{selectedBank}</span>
-                      </p>
-                    )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!selectedBank || !accountNumber || isVerifying}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isVerifying ? "Verifying..." : "Continue to Recipient Info"}
-                </button>
-              </>
+             <StepBankDetails 
+               accountNumber={accountNumber}
+               setAccountNumber={setAccountNumber}
+               handlePaste={handlePaste}
+               isCopied={isCopied}
+               query={query}
+               handleSearch={handleSearch}
+               handleCustomBankInput={handleCustomBankInput}
+               banks={banks}
+               isDropdownOpen={isDropdownOpen}
+               setIsDropdownOpen={setIsDropdownOpen}
+               selectedBank={selectedBank}
+               setSelectedBank={setSelectedBank}
+               dropdownRef={dropdownRef as React.RefObject<HTMLDivElement>}
+               Banks={Banks}
+               isVerifying={isVerifying}
+               handleBankSelect={handleBankSelect}
+             />
             )}
 
             {currentStep === "recipient-info" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("bank-details")}
-                  className="text-blue-600 mb-4 flex items-center gap-1 hover:text-blue-800 transition-colors"
-                >
-                  <RiArrowLeftLine /> Back to Bank Details
-                </button>
-                
-                <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <h4 className="font-semibold text-blue-800 mb-2">Bank Details</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Account Number:</span>
-                      <span className="font-semibold">{accountNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Bank:</span>
-                      <span className="font-semibold">{selectedBank}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">
-                    Recipient Name
-                  </label>
-                  <input
-                    type="text"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-xl outline-none focus:border-blue-500"
-                    placeholder="Enter recipient's full name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">
-                    Recipient Email
-                  </label>
-                  <input
-                    type="email"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-xl outline-none focus:border-blue-500"
-                    placeholder="Enter recipient's email"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    A confirmation email will be sent to this address
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-xl outline-none focus:border-blue-500"
-                    placeholder="Add a note or description for this transfer"
-                    rows={3}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    This will be included in the transaction history and email notifications
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!recipientName || !recipientEmail}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Continue to Amount
-                </button>
-              </>
+         <RecipientInfo
+    accountNumber={accountNumber}
+    selectedBank={selectedBank}
+    recipientName={recipientName}
+    setRecipientName={setRecipientName}
+    recipientEmail={recipientEmail}
+    setRecipientEmail={setRecipientEmail}
+    description={description}
+    setDescription={setDescription}
+    setCurrentStep={setCurrentStep}
+  />
             )}
 
             {currentStep === "amount" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("recipient-info")}
-                  className="text-blue-600 mb-4 flex items-center gap-1 hover:text-blue-800 transition-colors"
-                >
-                  <RiArrowLeftLine /> Back to Recipient Info
-                </button>
-                
-                <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <h4 className="font-semibold text-blue-800 mb-3">Transfer Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Account Number:</span>
-                      <span className="font-semibold">{accountNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Bank:</span>
-                      <span className="font-semibold">{selectedBank}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Recipient:</span>
-                      <span className="font-semibold">{recipientName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-semibold">{recipientEmail}</span>
-                    </div>
-                    {description && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Description:</span>
-                        <span className="font-semibold">{description}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2">
-                    Amount to Transfer
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                      $
-                    </span>
-                    <input
-                      type="text"
-                      value={amount}
-                      onChange={handleAmountChange}
-                      className="w-full pl-8 pr-4 py-3 border rounded-xl outline-none focus:border-blue-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAmount("100")}
-                      className="px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      $100
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAmount("250")}
-                      className="px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      $250
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAmount("500")}
-                      className="px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      $500
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAmount("1000")}
-                      className="px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      $1,000
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!amount || parseFloat(amount) <= 0}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Continue to PIN Verification
-                </button>
-              </>
+          <Amount setCurrentStep={setCurrentStep}
+  accountNumber={accountNumber}
+  selectedBank={selectedBank}
+  recipientName={recipientName}
+  recipientEmail={recipientEmail}
+  description={description}
+  amount={amount}
+  setAmount={setAmount} />
             )}
 
             {currentStep === "pin-verification" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep("amount")}
-                  className="text-blue-600 mb-4 flex items-center gap-1 hover:text-blue-800 transition-colors"
-                >
-                  <RiArrowLeftLine /> Back to Amount
-                </button>
-                
-                <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <h4 className="font-semibold text-blue-800 mb-3">Final Confirmation</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Amount:</span>
-                      <span className="font-bold text-lg text-green-600">
-                        ${formatCurrency(amount)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Account Number:</span>
-                      <span className="font-semibold">{accountNumber}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Bank:</span>
-                      <span className="font-semibold">{selectedBank}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Recipient:</span>
-                      <span className="font-semibold">{recipientName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-semibold">{recipientEmail}</span>
-                    </div>
-                    {description && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Description:</span>
-                        <span className="font-semibold">{description}</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between text-gray-600">
-                        <span>Fee:</span>
-                        <span className="font-semibold">$0.00</span>
-                      </div>
-                      <div className="flex justify-between font-bold text-lg pt-1">
-                        <span>Total:</span>
-                        <span>${formatCurrency(amount)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold mb-3 text-center">
-                    Enter your PIN to confirm the transfer
-                  </label>
-                  <div className="flex justify-center gap-3">
-                    {pin.map((digit, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => {
-                          pinInputRefs.current[i] = el;
-                        }}
-                        type="password"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handlePinChange(i, e.target.value)}
-                        onKeyDown={(e) => handlePinKeyDown(i, e)}
-                        className="w-14 h-14 text-xl text-center border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-xs text-center text-gray-500 mt-3">
-                    Enter your 4-digit PIN to authorize this transaction
-                  </p>
-                </div>
-
-                {pinError && (
-                  <div className="text-red-600 text-center font-medium">
-                    {pinError}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => verifyPin(pin.join(""))}
-                  disabled={pin.some((d) => !d) || isProcessing}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Processing Transfer...
-                    </div>
-                  ) : (
-                    "Confirm Transfer"
-                  )}
-                </button>
-              </>
+               <PinVerification
+    setCurrentStep={setCurrentStep}
+    formatCurrency={formatCurrency}
+    amount={amount}
+    accountNumber={accountNumber}
+    selectedBank={selectedBank}
+    recipientName={recipientName}
+    recipientEmail={recipientEmail}
+    description={description}
+    pin={pin}
+    pinInputRefs={pinInputRefs}
+    handlePinChange={handlePinChange}
+    handlePinKeyDown={handlePinKeyDown}
+    pinError={pinError} 
+    isProcessing={isProcessing} 
+    verifyPin={verifyPin}
+  />
             )}
 
             {currentStep === "confirmation" && (
-              <div className="text-center space-y-6">
-                <div className="text-green-500 text-5xl mb-2">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full">
-                    ✓
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800">
-                  Transfer Successful!
-                </h3>
-
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 p-6 rounded-xl shadow-sm">
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Amount Sent:</span>
-                      <span className="font-bold text-lg text-green-600">
-                        ${formatCurrency(amount)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">To:</span>
-                      <span className="font-bold">{recipientName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Transaction ID:</span>
-                      <span className="font-mono text-sm">
-                        TRX-{Date.now().toString().slice(-8)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Date:</span>
-                      <span className="font-medium">
-                        {new Date().toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <div className="flex items-start">
-                    <div className="text-blue-500 mr-3 mt-1">✉️</div>
-                    <div className="text-left">
-                      <p className="font-medium text-blue-800">
-                        Emails sent successfully!
-                      </p>
-                      <p className="text-sm text-blue-600">
-                        Confirmation emails have been sent to both you and{" "}
-                        {recipientEmail}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-left">
-                  <p className="font-medium text-green-800 mb-1">
-                    What happens next?
-                  </p>
-                  <ul className="text-sm text-green-700 space-y-1">
-                    <li>
-                      • The money is on its way to {recipientName}'s account
-                    </li>
-                    <li>• Funds should appear within 1-2 business days</li>
-                    <li>
-                      • You can track this transfer in your transaction history
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="space-y-3 pt-4">
-                  <button
-                    onClick={resetForm}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition-colors"
-                  >
-                    Make Another Transfer
-                  </button>
-                  <button
-                    onClick={() => (window.location.href = "/dashboard")}
-                    className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 py-3 rounded-xl font-semibold transition-colors"
-                  >
-                    Back to Dashboard
-                  </button>
-                </div>
-              </div>
+<Confirmation 
+  formatCurrency={formatCurrency}
+  amount={amount}
+  recipientName={recipientName}
+  recipientEmail={recipientEmail}
+  resetForm={resetForm}
+/>
             )}
           </form>
         </div>

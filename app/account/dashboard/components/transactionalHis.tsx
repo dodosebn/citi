@@ -221,6 +221,7 @@ export default function TransactionHis({ userId }: { userId: string }) {
                 className="p-4 hover:bg-gray-50 cursor-pointer transition"
                 onClick={() => setSelectedTransaction(t)}
               >
+
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -256,7 +257,6 @@ export default function TransactionHis({ userId }: { userId: string }) {
         )}
       </div>
 
-      {/* Transaction Details Modal */}
       {selectedTransaction && (
         <TransactionDetails
           transaction={selectedTransaction}

@@ -4,7 +4,7 @@ import Transfer from '../components/transfer'
 const page = () => {
   return (
     <div>
-        <Transfer />
+      <Transfer />
     </div>
   )
 }
