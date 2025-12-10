@@ -158,7 +158,7 @@ export default function TransactionHis({ userId }: { userId: string }) {
   };
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-max mx-auto">
       <ToastContainer position="top-right" />
 
       {/* Balance Card */}
@@ -190,13 +190,12 @@ export default function TransactionHis({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Transactions List */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="p-4 border-b">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold text-gray-800">Transaction History</h3>
-            <span className="text-sm text-gray-500">
-              {transactions.length} {transactions.length === 1 ? 'transaction' : 'transactions'}
+            <span className="text-sm text-blue-500 font-bold">
+              {transactions.length} {transactions.length === 1 }
             </span>
           </div>
         </div>
@@ -246,7 +245,7 @@ export default function TransactionHis({ userId }: { userId: string }) {
                       {t.type === 'debit' ? '-' : '+'}${t.amount.toFixed(2)}
                     </p>
                     <div className="flex items-center gap-2 text-gray-400 text-sm mt-1">
-                      <span>View details</span>
+                      <span>View</span>
                       <ChevronRight className="w-4 h-4" />
                     </div>
                   </div>
