@@ -162,13 +162,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="p-4">
-      <ToastContainer />
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+  <div className="p-4">
+    <ToastContainer />
+    <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
 
+    <div className="hidden md:block overflow-auto">
       <table className="w-full border">
         <thead>
-          <tr className="border">
+          <tr className="border bg-gray-100">
             <th className="p-2">Name</th>
             <th className="p-2">Email</th>
             <th className="p-2">Document</th>
@@ -179,6 +180,7 @@ export default function AdminDashboard() {
             <th className="p-2">Account Details</th>
           </tr>
         </thead>
+
         <tbody>
           {users.map((user) => {
             const docUrl = getDocumentUrl(user.document_path);
@@ -188,9 +190,7 @@ export default function AdminDashboard() {
 
             return (
               <tr key={user.id} className="border">
-                <td className="p-2">
-                  {user.fname} {user.lname}
-                </td>
+                <td className="p-2">{user.fname} {user.lname}</td>
                 <td className="p-2">{user.email}</td>
 
                 <td className="p-2">
@@ -207,10 +207,6 @@ export default function AdminDashboard() {
                             fill
                             sizes="64px"
                             className="rounded object-cover"
-                            onError={(e) => {
-                              console.error("Image load error for:", docUrl);
-                              e.currentTarget.src = "/placeholder-image.jpg";
-                            }}
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
@@ -222,13 +218,12 @@ export default function AdminDashboard() {
                       <button
                         className="bg-gray-300 px-2 py-1 rounded"
                         onClick={() => docUrl && window.open(docUrl, "_blank")}
-                        disabled={!docUrl}
                       >
-                        {docUrl ? "Open Doc" : "No document"}
+                        Open Doc
                       </button>
                     )
                   ) : (
-                    <span>No document</span>
+                    "No document"
                   )}
                 </td>
 
@@ -236,11 +231,10 @@ export default function AdminDashboard() {
                   {editingUser === user.id ? (
                     <input
                       type="number"
-                      step="0.01"
                       value={editForm.account_balance}
                       onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
+                        setEditForm((p) => ({
+                          ...p,
                           account_balance: e.target.value,
                         }))
                       }
@@ -257,8 +251,8 @@ export default function AdminDashboard() {
                       type="text"
                       value={editForm.account_number}
                       onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
+                        setEditForm((p) => ({
+                          ...p,
                           account_number: e.target.value,
                         }))
                       }
@@ -275,20 +269,17 @@ export default function AdminDashboard() {
                       type="text"
                       value={editForm.card_number}
                       onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
+                        setEditForm((p) => ({
+                          ...p,
                           card_number: e.target.value,
                         }))
                       }
                       className="border p-1 w-40"
                     />
-                  ) : user.card_number ? (
-                    `${user.card_number.slice(
-                      0,
-                      4
-                    )} **** **** ${user.card_number.slice(-4)}`
                   ) : (
-                    "Not set"
+                    user.card_number
+                      ? `${user.card_number.slice(0, 4)} **** **** ${user.card_number.slice(-4)}`
+                      : "Not set"
                   )}
                 </td>
 
@@ -298,12 +289,10 @@ export default function AdminDashboard() {
                       const input = prompt("Enter new balance amount");
                       if (!input) return;
                       const newBalance = parseFloat(input);
-                      if (!isNaN(newBalance))
-                        handleSetBalance(user.id, newBalance);
+                      if (!isNaN(newBalance)) handleSetBalance(user.id, newBalance);
                       else toast.error("Invalid number");
                     }}
-                    disabled={loading}
-                    className="bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 disabled:opacity-50"
+                    className="bg-purple-500 text-white px-2 py-1 rounded"
                   >
                     Set Balance
                   </button>
@@ -314,15 +303,13 @@ export default function AdminDashboard() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => saveAccountDetails(user.id)}
-                        disabled={loading}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 disabled:opacity-50 text-sm"
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm"
                       >
-                        {loading ? "Saving..." : "Save"}
+                        Save
                       </button>
                       <button
                         onClick={cancelEditing}
-                        disabled={loading}
-                        className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 disabled:opacity-50 text-sm"
+                        className="bg-gray-500 text-white px-3 py-1 rounded text-sm"
                       >
                         Cancel
                       </button>
@@ -330,7 +317,7 @@ export default function AdminDashboard() {
                   ) : (
                     <button
                       onClick={() => startEditing(user)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                      className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
                     >
                       Edit
                     </button>
@@ -341,32 +328,186 @@ export default function AdminDashboard() {
           })}
         </tbody>
       </table>
-
-      {/* Fullscreen image preview */}
-      {selectedImage && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
-          <button
-            className="absolute top-4 right-4 text-white text-3xl"
-            onClick={() => setSelectedImage(null)}
-          >
-            ×
-          </button>
-          <div className="relative w-[90vw] h-[90vh]">
-            <Image
-              src={selectedImage}
-              alt="Preview"
-              fill
-              sizes="90vw"
-              className="rounded object-contain"
-              onError={(e) => {
-                console.error("Fullscreen image load error:", selectedImage);
-                toast.error("Failed to load image");
-                setSelectedImage(null);
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
-  );
+
+    {/* MOBILE VERSION (Cards) */}
+    <div className="md:hidden flex flex-col gap-4">
+      {users.map((user) => {
+        const docUrl = getDocumentUrl(user.document_path);
+        const isImage = user.document_path
+          ? /\.(jpg|jpeg|png|gif)$/i.test(user.document_path)
+          : false;
+
+        return (
+          <div
+            key={user.id}
+            className="border rounded-lg p-4 shadow-sm bg-white flex flex-col gap-3"
+          >
+            <div className="flex justify-between">
+              <h2 className="font-bold text-lg">
+                {user.fname} {user.lname}
+              </h2>
+              <button
+                onClick={() => startEditing(user)}
+                className="text-sm bg-blue-500 text-white px-3 py-1 rounded"
+              >
+                Edit
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600">{user.email}</p>
+
+            {/* DOCUMENT */}
+            <div>
+              <p className="font-semibold mb-1">Document:</p>
+              {user.document_path ? (
+                isImage ? (
+                  <div
+                    className="relative w-32 h-32 rounded overflow-hidden"
+                    onClick={() => docUrl && setSelectedImage(docUrl)}
+                  >
+                    <Image
+                      src={docUrl || "/placeholder-image.jpg"}
+                      alt="Document"
+                      fill
+                      className="object-cover rounded"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    className="bg-gray-300 px-3 py-1 rounded"
+                    onClick={() => docUrl && window.open(docUrl, "_blank")}
+                  >
+                    Open Document
+                  </button>
+                )
+              ) : (
+                "No document"
+              )}
+            </div>
+
+            {/* BALANCE */}
+            <div>
+              <p className="font-semibold">Balance:</p>
+
+              {editingUser === user.id ? (
+                <input
+                  type="number"
+                  className="border p-2 rounded w-full"
+                  value={editForm.account_balance}
+                  onChange={(e) =>
+                    setEditForm((p) => ({
+                      ...p,
+                      account_balance: e.target.value,
+                    }))
+                  }
+                />
+              ) : (
+                <p className="text-lg font-bold">${user.account_balance.toFixed(2)}</p>
+              )}
+            </div>
+
+            {/* ACCOUNT NUMBER */}
+            <div>
+              <p className="font-semibold">Account Number:</p>
+
+              {editingUser === user.id ? (
+                <input
+                  type="text"
+                  className="border p-2 rounded w-full"
+                  value={editForm.account_number}
+                  onChange={(e) =>
+                    setEditForm((p) => ({
+                      ...p,
+                      account_number: e.target.value,
+                    }))
+                  }
+                />
+              ) : (
+                <p>{user.account_number || "Not set"}</p>
+              )}
+            </div>
+
+            {/* CARD NUMBER */}
+            <div>
+              <p className="font-semibold">Card Number:</p>
+              {editingUser === user.id ? (
+                <input
+                  type="text"
+                  className="border p-2 rounded w-full"
+                  value={editForm.card_number}
+                  onChange={(e) =>
+                    setEditForm((p) => ({
+                      ...p,
+                      card_number: e.target.value,
+                    }))
+                  }
+                />
+              ) : (
+                <p>
+                  {user.card_number
+                    ? `${user.card_number.slice(0, 4)} **** **** ${user.card_number.slice(-4)}`
+                    : "Not set"}
+                </p>
+              )}
+            </div>
+
+            {/* SET BALANCE */}
+            <button
+              className="bg-purple-500 text-white px-3 py-2 rounded w-full"
+              onClick={() => {
+                const input = prompt("Enter new balance amount:");
+                if (!input) return;
+                const newBalance = parseFloat(input);
+                if (!isNaN(newBalance)) handleSetBalance(user.id, newBalance);
+                else toast.error("Invalid number");
+              }}
+            >
+              Set Balance
+            </button>
+
+            {/* SAVE/CANCEL EDIT */}
+            {editingUser === user.id && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="flex-1 bg-green-500 text-white py-2 rounded"
+                  onClick={() => saveAccountDetails(user.id)}
+                >
+                  Save
+                </button>
+                <button
+                  className="flex-1 bg-gray-500 text-white py-2 rounded"
+                  onClick={cancelEditing}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Fullscreen image preview */}
+    {selectedImage && (
+      <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
+        <button
+          className="absolute top-4 right-4 text-white text-3xl"
+          onClick={() => setSelectedImage(null)}
+        >
+          ×
+        </button>
+        <div className="relative w-[90vw] h-[90vh]">
+          <Image
+            src={selectedImage}
+            alt="Preview"
+            fill
+            className="rounded object-contain"
+          />
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 }
