@@ -3,6 +3,7 @@ import { FaLightbulb, FaReceipt } from "react-icons/fa";
 import { GiTakeMyMoney } from "react-icons/gi";
 import { FaMoneyBillTrendUp } from "react-icons/fa6";
 import { useAppStore } from '@/app/store/useApp';
+import { CiSettings } from 'react-icons/ci';
 
 
 
@@ -16,8 +17,8 @@ const QuickActions = () => {
 },
     { id: 'invest', label: 'Invest', icon: <FaMoneyBillTrendUp size={28}  />
 },
-    { id: "pay", label: "Pay", icon: <FaReceipt size={28} /> },
-
+{id: 'settings', label: 'Account', icon: <CiSettings size={28}  />
+}
   ];
 
   return (

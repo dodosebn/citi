@@ -140,7 +140,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ account, user }) => {
 
       <div className="mt-4">
         <section className="flex justify-between items-center">
-          <div className="flex flex-row bg-[#053464] px-2 py-1 items-center gap-1">
+          <div className="flex flex-row bg-[#053464] px-2 py-1 items-center md:gap-1">
             <FaArrowCircleUp size={24} />
             <Link
               className=" text-white px-4 py-2"
@@ -150,7 +150,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ account, user }) => {
             </Link>
           </div>
 
-          <div className="flex flex-row items-center gap-1 bg-[#053464] px-2 py-1">
+          <div className="flex flex-row items-center md:gap-1 bg-[#053464] px-2 py-1">
             <CiCirclePlus size={24} />
             <Link className=" text-white px-4 py-2 " href={"/account/dashboard/addMoney"}>Add Money</Link>
           </div>

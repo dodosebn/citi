@@ -48,7 +48,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+    <div className="flex justify-center items-center min-h-screen">
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 shadow-md rounded w-full max-w-md space-y-4"
@@ -62,6 +62,7 @@ export default function AdminLogin() {
             name="email"
             value={formData.email}
             onChange={handleChange}
+            placeholder="Who Goes?"
             className="border p-2 w-full"
             required
           />
@@ -75,6 +76,7 @@ export default function AdminLogin() {
             value={formData.password}
             onChange={handleChange}
             className="border p-2 w-full"
+            placeholder="Enter Ya Password"
             required
           />
         </div>

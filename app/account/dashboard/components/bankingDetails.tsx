@@ -1,25 +1,31 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Head from "next/head";
-import { Transaction, Account, Card, User } from "./type";
+import {
+  Transaction,
+  Account,
+  Card,
+  User
+} from "./type";
 import BalanceCard from "./balanceCard";
 import QuickActions from "./quickActions";
 import CreditCard from "./creditCard";
-import TransactionHistory from "./transactionalHis";
+import TransactionHis from "./transactionalHis";
 import UserSettings from "./userSettings";
 import { useAppStore } from "@/app/store/useApp";
 import Layout from "../layout";
-import TransactionHis from "./transactionalHis";
-import Electricity from "./Elect/electricity";
 import ElectricityForm from "./Elect/electricityForm";
 import LoanPage from "./loan/loanPage";
 import InvestmentsPage from "./investment/investment";
-import Pay from "../pay/pay";
-import PayForm from "../pay/payForm";
-import Transfer from './transfer';
+import Transfer from "./transfer";
+
 const BankingDetails: React.FC = () => {
   const { user, currentView, setUser } = useAppStore();
 
+  // ------------------------------
+  // Helpers
+  // ------------------------------
   const formatCustomTime = (date: Date): string =>
     date.toLocaleTimeString("en-GB", { hour12: false });
 
@@ -35,59 +41,77 @@ const BankingDetails: React.FC = () => {
     return `${time}, ${dayName}, ${day} ${month} ${year}`;
   };
 
+  // ------------------------------
+  // Account State (safe defaults)
+  // ------------------------------
   const [account, setAccount] = useState<Account>({
-    balance: user?.accountBalance,
-    lastUpdated: formatCustomDate(new Date()),
-    timeUpdated: formatCustomTime(new Date()),
+    balance: 0,
+    lastUpdated: "",
+    timeUpdated: "",
     currency: "$",
-    accountNumber: user?.accountNumber,
+    accountNumber: ""
   });
 
+  // When user loads (after refresh), sync account
   useEffect(() => {
-    setAccount((prev) => ({
-      ...prev,
+    if (!user) return;
+
+    setAccount({
+      balance: user.accountBalance,
       lastUpdated: formatCustomDate(new Date()),
       timeUpdated: formatCustomTime(new Date()),
-    }));
-  }, []);
-
-
-
-  const [card, setCard] = useState<Card>({
-    id: `${user?.id}`,
-    cardNumber: `${user?.cardNumber}`,
-    expiryDate: "12/35",
-    cvv: "123",
-    cardHolder: user ? `${user.firstName} ${user.lastName}` : "Card Holder",
-    type: "visa",
-  });
-
-  useEffect(() => {
-    if (user) {
-      setCard((prev) => ({
-        ...prev,
-        cardHolder: `${user.firstName} ${user.lastName}`,
-      }));
-    }
+      currency: "$",
+      accountNumber: user.accountNumber
+    });
   }, [user]);
 
+  // ------------------------------
+  // Card State
+  // ------------------------------
+  const [card, setCard] = useState<Card>({
+    id: "",
+    cardNumber: "",
+    expiryDate: "12/35",
+    cvv: "123",
+    cardHolder: "Card Holder",
+    type: "visa"
+  });
 
+  // Sync when user loads
+  useEffect(() => {
+    if (!user) return;
 
+    setCard({
+      id: user.id.toString(),
+      cardNumber: user.cardNumber || "",
+      expiryDate: "12/35",
+      cvv: "123",
+      cardHolder: `${user.firstName} ${user.lastName}`,
+      type: "visa"
+    });
+  }, [user]);
+
+  // ------------------------------
+  // Update user handler
+  // ------------------------------
   const handleUpdateUser = (updatedUser: User) => {
     setUser(updatedUser);
   };
 
+  // ------------------------------
+  // Navigation Renderer
+  // ------------------------------
   const renderCurrentView = () => {
     switch (currentView) {
       case "home":
         return (
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <BalanceCard account={account} user={user} />
+              {user && <BalanceCard account={account} user={user} />}
               <QuickActions />
 
               <div className="mt-6 md:hidden flex flex-col gap-6">
-{user?.id && <TransactionHis userId={user.id} />}
+                {user?.id && <TransactionHis userId={user.id} />}
                 <CreditCard card={card} />
               </div>
 
@@ -97,33 +121,31 @@ const BankingDetails: React.FC = () => {
             </div>
 
             <div className="lg:col-span-1 md:flex hidden">
-{user?.id && <TransactionHis userId={user.id} />}
-            </div>          </div>
+              {user?.id && <TransactionHis userId={user.id} />}
+            </div>
+          </div>
         );
 
       case "settings":
-        return <UserSettings user={user} onUpdateUser={handleUpdateUser} />;
+        return (
+          <UserSettings user={user} onUpdateUser={handleUpdateUser} />
+        );
 
       case "electricity":
         return <ElectricityForm />;
-case "loan":
-        return <LoanPage user={user}/>;
-     case 'invest': 
-     return <InvestmentsPage />;
+
+      case "loan":
+        return <LoanPage user={user} />;
+
+      case "invest":
+        return <InvestmentsPage />;
+
       case "spend":
         return (
           <div className="mt-8">
-            <Transfer  />
+            <Transfer />
           </div>
         );
-
-      case "pay":
-        return (
-          <div className="mt-8 bg-white p-6 rounded-lg shadow">
-        <PayForm />
-          </div>
-        );
-
       case "card":
         return (
           <div className="mt-8 rounded-lg shadow">
@@ -134,11 +156,15 @@ case "loan":
       default:
         return (
           <div className="mt-8 bg-white p-6 rounded-lg shadow">
-404          </div>
+            404
+          </div>
         );
     }
   };
 
+  // ------------------------------
+  // Render
+  // ------------------------------
   return (
     <>
       <Head>
