@@ -245,6 +245,10 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
             This is an automated message. Please do not reply to this email.<br />
             Generated on {new Date().toLocaleString()}
           </p>
+<p style={{ fontSize: '12px', color: '#9ca3af' }}>
+  94050 Southwest Germini Drive
+  Beaverton, Oregon 97008, U.S.A
+</p>
         </div>
       </div>
     </div>

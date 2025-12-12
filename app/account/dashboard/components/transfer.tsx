@@ -626,7 +626,7 @@ const Transfer = () => {
           bank_name: selectedBank,
           account_number: accountNumber,
           transaction_id: transactionId,
-          status: "completed",
+          // status: "completed",
           created_at: transactionDate,
         });
 
