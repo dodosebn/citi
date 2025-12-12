@@ -28,7 +28,7 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
         <label className="block text-sm font-semibold mb-2">
           Account Number
         </label>
-        <div className="flex border rounded-xl overflow-hidden">
+        <div className="flex border rounded-md overflow-hidden">
           <input
             type="text"
             value={accountNumber}
@@ -73,7 +73,7 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
             </button>
           </div>
           {isDropdownOpen && (
-            <ul className="absolute z-10 w-full bg-white border rounded-xl mt-2 max-h-60 overflow-y-auto shadow-lg">
+            <ul className="absolute z-10 w-full bg-white border rounded-md mt-2 max-h-60 overflow-y-auto shadow-lg">
               {banks.length > 0 ? (
                 banks.map((b, i) => (
                   <li
@@ -104,7 +104,7 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
       <button
         type="submit"
         disabled={!selectedBank || !accountNumber || isVerifying}
-        className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-blue-600 text-white py-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isVerifying ? "Verifying..." : "Continue to Recipient Info"}
       </button>

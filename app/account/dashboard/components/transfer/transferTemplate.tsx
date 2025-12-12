@@ -30,7 +30,7 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
     fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
     lineHeight: 1.6,
     color: '#333',
-    padding: '20px',
+    padding: '10px',
   };
 
   const headerStyle: React.CSSProperties = {
@@ -153,7 +153,6 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
 
   return (
     <div style={containerStyle}>
-      {/* Header */}
       <div style={headerStyle}>
         <img 
           src="https://citi-zeta.vercel.app/images/logo.png" 
@@ -165,14 +164,11 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
         </h2>
       </div>
 
-      {/* Main Content */}
       <div style={receiptContainerStyle}>
-        {/* Greeting */}
         <p style={greetingStyle}>
           Dear {isSender ? details.senderName : details.recipientName},
         </p>
         
-        {/* Amount Display */}
         <div style={amountDisplayStyle}>
           <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '5px' }}>
             {isSender ? 'Amount Transferred' : 'Amount Received'}
@@ -185,7 +181,6 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
           </div>
         </div>
 
-        {/* Bank/Sender Info */}
         <div style={bankInfoStyle}>
           <h3 style={{ color: '#1e40af', marginTop: '0', marginBottom: '15px' }}>
             {isSender ? 'Recipient Details' : 'Sender Details'}
@@ -210,7 +205,6 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
           </div>
         </div>
 
-        {/* Transaction Details */}
         <div>
           <div style={detailRowStyle}>
             <span style={detailLabelStyle}>Transaction ID:</span>
@@ -238,7 +232,6 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
           </div>
         </div>
 
-        {/* Note Box */}
         <div style={noteBoxStyle}>
           <strong>Note:</strong>{' '}
           {isSender 
@@ -246,7 +239,6 @@ export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
             : "The funds should reflect in your account shortly. If you don't see the amount within 24 hours, please contact our support team."}
         </div>
 
-        {/* Footer */}
         <div style={footerStyle}>
           <p style={{ marginBottom: '5px' }}>Thank you for banking with us!</p>
           <p style={{ fontSize: '12px', color: '#9ca3af' }}>

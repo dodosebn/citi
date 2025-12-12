@@ -62,13 +62,13 @@ const Amount: React.FC<AmountProps> = ({
             type="text"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full pl-8 pr-4 py-3 border rounded-xl outline-none focus:border-blue-500"
+            className="w-full pl-8 pr-4 py-3 border rounded-md outline-none focus:border-blue-500"
             placeholder="0.00"
           />
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {[100, 250, 500, 1000].map((amt) => (
+          {[1000, 2000, 3000, 5000].map((amt) => (
             <button
               type="button"
               key={amt}
@@ -84,7 +84,7 @@ const Amount: React.FC<AmountProps> = ({
       <button
         type="submit"
         disabled={!amount || parseFloat(amount) <= 0}
-        className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-blue-600 text-white py-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Continue to PIN Verification
       </button>

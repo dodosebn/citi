@@ -77,7 +77,7 @@ const pinVerification: React.FC<PinVerificationProps> = ({setCurrentStep, format
                         value={digit}
                         onChange={(e) => handlePinChange(i, e.target.value)}
                         onKeyDown={(e) => handlePinKeyDown(i, e)}
-                        className="w-14 h-14 text-xl text-center border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+                        className="w-14 h-14 text-xl text-center border-2 border-gray-300 rounded-md focus:border-blue-500 focus:outline-none"
                       />
                     ))}
                   </div>
@@ -96,7 +96,7 @@ const pinVerification: React.FC<PinVerificationProps> = ({setCurrentStep, format
                   type="button"
                   onClick={() => verifyPin(pin.join(""))}
                   disabled={pin.some((d) => !d) || isProcessing}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isProcessing ? (
                     <div className="flex items-center justify-center">

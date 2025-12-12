@@ -29,7 +29,7 @@ const BetaNav = () => {
 
   return (
     <div className="w-full hidden md:block">
-      <div className="flex justify-center items-center px-6 pb-2 max-w-7xl mx-auto">
+      <div className="flex justify-center items-center px-6 max-w-7xl mx-auto">
         <ul className="flex space-x-8">
           {menuItems.map((item, index) => (
             <li

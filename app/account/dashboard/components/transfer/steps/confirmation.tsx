@@ -69,13 +69,13 @@ const Confirmation: React.FC<ConfirmationProps> = ({formatCurrency, amount, reci
                 <div className="space-y-3 pt-4">
                   <button
                     onClick={resetForm}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition-colors"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-ful font-semibold transition-colors"
                   >
                     Make Another Transfer
                   </button>
                   <button
                     onClick={() => (window.location.href = "/account/dashboard")}
-                    className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 py-3 rounded-xl font-semibold transition-colors"
+                    className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 py-3 rounded-full font-semibold transition-colors"
                   >
                     Back to Dashboard
                   </button>

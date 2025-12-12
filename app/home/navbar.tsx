@@ -48,7 +48,7 @@ const Navbar = () => {
     <header className="bg-white">
       {/* Desktop Navbar */}
       {!isMobile && (
-        <nav className="flex cursor-pointer relative items-center max-w-7xl mx-auto py-4">
+        <nav className="flex cursor-pointer relative items-center max-w-7xl mx-auto">
           <div>
             <Link href="/">
               <Image src={logo} alt="logo" width={180} height={50} />
