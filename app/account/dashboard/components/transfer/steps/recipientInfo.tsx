@@ -11,7 +11,11 @@ const RecipientInfo: React.FC<RecipientInfoProps> = ({
   setRecipientEmail,
   description,
   setDescription,
-  setCurrentStep
+  setCurrentStep,
+  swiftCode,
+  setSwiftCode,
+  routingNumber,
+  setRoutingNumber,
 }) => {
 
   const presetDescriptions = ["Transaction Pending", "Transfer Completed"];
@@ -42,34 +46,38 @@ const RecipientInfo: React.FC<RecipientInfoProps> = ({
         </div>
       </div>
 
-      <div>
+    {[
+      { label: "Recipient Name", value: recipientName, setter: setRecipientName, type: "text", placeholder: "Enter recipient's full name" },
+      { label: "Recipient Email", value: recipientEmail, setter: setRecipientEmail, type: "email", placeholder: "Enter recipient's email" },
+      { label: "Swiftcode", value: swiftCode, setter: setSwiftCode, type: "text", placeholder: "Enter SwiftCode" },
+      { label: "Routing Number", value: routingNumber, setter: setRoutingNumber, type: "text", placeholder: "Enter Routing Number" }
+    ].map(({ label, value, setter, type, placeholder }, idx) => (
+      <div key={idx}>
         <label className="block text-sm font-semibold mb-2">
-          Recipient Name
+          {label}
         </label>
         <input
-          type="text"
-          value={recipientName}
-          onChange={(e) => setRecipientName(e.target.value)}
+          type={type}
+          value={value}
+          onChange={(e) => setter(e.target.value)}
           className="w-full px-4 py-3 border rounded-md outline-none focus:border-blue-500"
-          placeholder="Enter recipient's full name"
+          placeholder={placeholder}
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-semibold mb-2">
-          Recipient Email
-        </label>
-        <input
-          type="email"
-          value={recipientEmail}
-          onChange={(e) => setRecipientEmail(e.target.value)}
-          className="w-full px-4 py-3 border rounded-md outline-none focus:border-blue-500"
-          placeholder="Enter recipient's email"
-        />
+        { type === "email" &&
+            <div>
+   
+      
         <p className="text-xs text-gray-500 mt-1">
           A confirmation email will be sent to this address
         </p>
       </div>
+        }
+      </div>
+    ))}
+  
+  
+
+    
 
       <div>
         <label className="block text-sm font-semibold mb-2">

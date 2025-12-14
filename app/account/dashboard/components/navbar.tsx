@@ -3,7 +3,7 @@ import React from "react";
 import Logo from "@/public/images/logo.png";
 import { MdHome } from "react-icons/md";
 import { FaPaperPlane, FaRegSave } from "react-icons/fa";
-import { FaCreditCard } from "react-icons/fa6";
+import { FaCreditCard, FaMoneyBillTrendUp } from "react-icons/fa6";
 import { User } from "../components/type";
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
@@ -42,12 +42,12 @@ const Navbar: React.FC<NavbarProps> = ({
       icon: <FaPaperPlane size={18} />,
       pat: "/account/dashboard/transfer",
     },
-    {
-      id: "save",
-      label: "Save",
-      icon: <FaRegSave size={18} />,
-      pat: "/account/dashboard/save",
+    { id: 'invest', 
+      label: 'Invest',
+       icon: <FaMoneyBillTrendUp size={18} />,
+             pat: "/invest-part/otp-verification",
     },
+ 
     { id: "card", label: "Card", icon: <FaCreditCard size={18} />, pat: "/account/dashboard/card" }, 
   ];
 

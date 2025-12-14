@@ -50,6 +50,124 @@ export default function ElectricityForm() {
     }
   };
 
+  /* =======================
+     EMAIL NOTIFICATION
+  ======================= */
+  const sendPaymentEmail = async (newBalance: number) => {
+    if (!user?.email) return;
+
+      const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        body { background:#f5f7fa; padding:20px; font-family:Courier New, monospace; }
+        .receipt {
+          max-width:600px; margin:auto; background:#fff;
+          border:2px solid #1a237e; border-radius:8px; overflow:hidden;
+        }
+        .header {
+          background:linear-gradient(135deg,#1a237e,#283593);
+          color:#fff; text-align:center; padding:20px;
+        }
+        .header img { max-width:140px; margin-bottom:10px; }
+        .content { padding:25px; }
+        .row {
+          display:flex; justify-content:space-between;
+          border-bottom:1px dashed #ddd; padding:10px 0;
+        }
+        .total {
+          font-size:18px; font-weight:bold;
+          border-top:3px double #333; border-bottom:3px double #333;
+          padding:15px 0; margin:20px 0;
+        }
+        .success {
+          background:#e8f5e9; color:#2e7d32;
+          padding:12px; text-align:center;
+          border-left:4px solid #4caf50;
+          margin-bottom:20px;
+        }
+        .footer {
+          text-align:center; font-size:12px; color:#666;
+          margin-top:20px;
+        }
+            .receipt-footer {
+          text-align: center;
+          padding: 20px 0 0;
+          color: #666;
+          font-size: 12px;
+          border-top: 1px solid #eee;
+          margin-top: 20px;
+        }
+        .receipt-footer p {
+          margin: 5px 0;
+        }
+              .receipt-warning {
+          background: #fff3e0;
+          color: #f57c00;
+          padding: 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          margin-top: 20px;
+          border-left: 4px solid #ff9800;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="receipt">
+        <div class="header">
+          <img src="https://citi-zeta.vercel.app/images/logo.png" />
+          <h2>Citibank</h2>
+          <p>Electricity Bill Payment Receipt</p>
+        </div>
+
+        <div class="content">
+          <div class="success">✓ PAYMENT SUCCESSFUL</div>
+
+          <div class="row"><span>Customer:</span><span>${customerName}</span></div>
+          <div class="row"><span>Meter Number:</span><span>${meterNumber}</span></div>
+          <div class="row"><span>Due Date:</span><span>${dueDate}</span></div>
+
+          <div class="total">
+            <span>Amount Paid:</span>
+            <span>$${amount.toFixed(2)}</span>
+          </div>
+
+          <div class="row">
+            <span>New Balance:</span>
+            <span>$${newBalance.toFixed(2)}</span>
+          </div>
+
+          <div class="footer receipt-footer">
+            <p>This is an automated receipt.</p>
+  Generated: ${new Date().toISOString()}
+            </p>
+                <p>
+            94050 Southwest Germini Drive<br />
+            Beaverton, Oregon 97008, U.S.A
+          </p>          </div>
+        </div>
+      </div>
+         <div class="receipt-warning" style="max-width: 600px; margin: 20px auto;">
+        <strong>Note:</strong> This transfer is initiated by the sender. 
+        If you were not expecting this payment, please contact your bank immediately.
+      </div>
+      
+    </body>
+    </html>
+    `;
+
+    await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: user.email,
+        subject: "Electricity Bill Payment Receipt",
+        html,
+      }),
+    });
+  };
   const verifyPin = async (enteredPin: string) => {
     const balance = BALANCE ?? 0;
     setIsProcessing(true);
@@ -65,7 +183,6 @@ export default function ElectricityForm() {
         return;
       }
 
-      // Deduct amount from balance
       const newBalance = balance - amount;
 
       const { error } = await supabase
@@ -88,7 +205,9 @@ export default function ElectricityForm() {
         },
       }));
 
-      // Mark bill as paid
+      // ✅ SEND EMAIL AFTER FUNDS ARE DEDUCTED
+      await sendPaymentEmail(newBalance);
+
       setStatus("paid");
       setPaymentStatus("success");
       setCurrentStep("confirmation");
@@ -122,18 +241,16 @@ export default function ElectricityForm() {
     setPaymentStatus("pending");
   };
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString("en-US", {
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
           <div className=" p-6 text-white">
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-2xl font-bold text-blue-800">
@@ -148,7 +265,6 @@ export default function ElectricityForm() {
 
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Form Section */}
               <div className="space-y-6">
                 {currentStep === "bill-details" && (
                   <>

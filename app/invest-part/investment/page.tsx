@@ -1,5 +1,4 @@
-import React from 'react'
-import InvestmentsPage from '../components/investment/investment'
+import InvestmentsPage from '@/app/account/dashboard/components/investment/investment'
 
 const page = () => {
   return (

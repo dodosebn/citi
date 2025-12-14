@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React from "react";
 
 interface TransferEmailProps {
   type: "sender" | "recipient";
@@ -15,240 +15,231 @@ interface TransferEmailProps {
     date: string;
     description: string;
     newBalance?: number;
+    swiftCode: string;
+    routingNumber: string;
   };
 }
 
-export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({ 
-  type, 
-  details 
+export const TransferEmailTemplate: React.FC<TransferEmailProps> = ({
+  type,
+  details,
 }) => {
   const isSender = type === "sender";
-  
+
   const containerStyle: React.CSSProperties = {
-    maxWidth: '600px',
-    margin: '0 auto',
-    fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-    lineHeight: 1.6,
-    color: '#333',
-    padding: '10px',
+    maxWidth: "600px",
+    margin: "0 auto",
+    fontFamily: "Arial, Helvetica, sans-serif",
+    color: "#111827",
+    padding: "12px",
+    backgroundColor: "#f9fafb",
+  };
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: "#ffffff",
+    borderRadius: "12px",
+    padding: "20px",
+    border: "1px solid #e5e7eb",
   };
 
   const headerStyle: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: '30px',
-    paddingBottom: '20px',
-    borderBottom: '2px solid #e5e7eb',
+    textAlign: "center",
+    paddingBottom: "16px",
+    borderBottom: "2px solid #e5e7eb",
+    marginBottom: "20px",
   };
 
-  const logoStyle: React.CSSProperties = {
-    height: '80px',
-    marginBottom: '15px',
-  };
-
-  const receiptContainerStyle: React.CSSProperties = {
-    background: 'white',
-    borderRadius: '12px',
-    padding: '25px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    border: '1px solid #e5e7eb',
-  };
-
-  const amountDisplayStyle: React.CSSProperties = {
-    textAlign: 'center',
-    margin: '25px 0',
-    padding: '20px',
-    background: isSender ? '#fee2e2' : '#dcfce7',
-    borderRadius: '10px',
-    border: `2px solid ${isSender ? '#fecaca' : '#bbf7d0'}`,
+  const amountBoxStyle: React.CSSProperties = {
+    textAlign: "center",
+    padding: "18px",
+    margin: "20px 0",
+    borderRadius: "10px",
+    backgroundColor: isSender ? "#fee2e2" : "#dcfce7",
+    border: `2px solid ${isSender ? "#fecaca" : "#bbf7d0"}`,
   };
 
   const amountTextStyle: React.CSSProperties = {
-    fontSize: '32px',
+    fontSize: "28px",
+    fontWeight: "bold",
+    color: isSender ? "#dc2626" : "#16a34a",
+  };
+
+  const tableStyle: React.CSSProperties = {
+    width: "100%",
+    borderCollapse: "collapse",
+    marginTop: "10px",
+  };
+
+  const labelCellStyle: React.CSSProperties = {
+    padding: "10px 0",
+    fontWeight: 600,
+    color: "#6b7280",
+    verticalAlign: "top",
+    width: "40%",
+  };
+
+  const valueCellStyle: React.CSSProperties = {
+    padding: "10px 0",
+    color: "#111827",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
+  };
+
+  const sectionTitleStyle: React.CSSProperties = {
+    fontSize: "16px",
     fontWeight: 700,
-    color: isSender ? '#dc2626' : '#16a34a',
-    margin: '5px 0',
+    color: "#1e40af",
+    margin: "20px 0 10px",
   };
 
-  const detailRowStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '12px 0',
-    borderBottom: '1px solid #f3f4f6',
-  };
-
-  const detailLabelStyle: React.CSSProperties = {
+  const badgeStyle: React.CSSProperties = {
+    display: "inline-block",
+    padding: "6px 12px",
+    borderRadius: "999px",
+    backgroundColor: "#d1fae5",
+    color: "#065f46",
     fontWeight: 600,
-    color: '#6b7280',
-    minWidth: '180px',
-  };
-
-  const detailValueStyle: React.CSSProperties = {
-    fontWeight: 500,
-    color: '#111827',
-    textAlign: 'right' as const,
-  };
-
-  const statusBadgeStyle: React.CSSProperties = {
-    display: 'inline-block',
-    padding: '6px 12px',
-    borderRadius: '9999px',
-    fontSize: '14px',
-    fontWeight: 600,
-    background: '#d1fae5',
-    color: '#065f46',
+    fontSize: "13px",
   };
 
   const footerStyle: React.CSSProperties = {
-    marginTop: '30px',
-    paddingTop: '20px',
-    borderTop: '2px solid #e5e7eb',
-    textAlign: 'center',
-    color: '#6b7280',
-    fontSize: '14px',
+    marginTop: "30px",
+    paddingTop: "16px",
+    borderTop: "2px solid #e5e7eb",
+    textAlign: "center",
+    fontSize: "12px",
+    color: "#6b7280",
   };
 
-  const transactionIdStyle: React.CSSProperties = {
-    fontFamily: "'Courier New', monospace",
-    background: '#f9fafb',
-    padding: '8px 12px',
-    borderRadius: '6px',
-    fontSize: '14px',
-    color: '#374151',
-    display: 'inline-block',
-  };
-
-  const noteBoxStyle: React.CSSProperties = {
-    background: '#f0f9ff',
-    borderLeft: '4px solid #0ea5e9',
-    padding: '15px',
-    margin: '20px 0',
-    borderRadius: '6px',
-  };
-
-  const greetingStyle: React.CSSProperties = {
-    fontSize: '16px',
-    color: '#4b5563',
-    marginBottom: '20px',
-  };
-
-  const bankInfoStyle: React.CSSProperties = {
-    background: '#f8fafc',
-    padding: '20px',
-    borderRadius: '8px',
-    margin: '20px 0',
-    border: '1px solid #e2e8f0',
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleString("en-US", {
+      weekday: "short",
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   return (
     <div style={containerStyle}>
-      <div style={headerStyle}>
-        <img 
-          src="https://citi-zeta.vercel.app/images/logo.png" 
-          alt="Bank Logo" 
-          style={logoStyle}
-        />
-        <h2 style={{ color: '#1e40af', margin: '10px 0', fontSize: '24px' }}>
-          {isSender ? 'Transfer Successful!' : 'Money Received!'}
-        </h2>
-      </div>
+      <div style={cardStyle}>
+        {/* Header */}
+        <div style={headerStyle}>
+          <img
+            src="https://citi-zeta.vercel.app/images/logo.png"
+            alt="Bank Logo"
+            style={{ height: "70px", marginBottom: "10px" }}
+          />
+          <h2 style={{ margin: 0, color: "#1e40af" }}>
+            {isSender ? "Transfer Successful" : "Money Received"}
+          </h2>
+        </div>
 
-      <div style={receiptContainerStyle}>
-        <p style={greetingStyle}>
+        {/* Greeting */}
+        <p>
           Dear {isSender ? details.senderName : details.recipientName},
         </p>
-        
-        <div style={amountDisplayStyle}>
-          <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '5px' }}>
-            {isSender ? 'Amount Transferred' : 'Amount Received'}
+
+        {/* Amount */}
+        <div style={amountBoxStyle}>
+          <div style={{ fontSize: "13px", color: "#6b7280" }}>
+            {isSender ? "Amount Transferred" : "Amount Received"}
           </div>
           <div style={amountTextStyle}>
-            {isSender ? '−' : '+'}${details.amount.toFixed(2)}
-          </div>
-          <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
-            {isSender ? 'Debit Transaction' : 'Credit Transaction'}
+            {isSender ? "−" : "+"}${details.amount.toFixed(2)}
           </div>
         </div>
 
-        <div style={bankInfoStyle}>
-          <h3 style={{ color: '#1e40af', marginTop: '0', marginBottom: '15px' }}>
-            {isSender ? 'Recipient Details' : 'Sender Details'}
-          </h3>
-          <div>
-            <div style={detailRowStyle}>
-              <span style={detailLabelStyle}>
-                {isSender ? 'Recipient:' : 'Sender:'}
-              </span>
-              <span style={detailValueStyle}>
-                {isSender ? details.recipientName : details.senderName}
-              </span>
-            </div>
-            <div style={detailRowStyle}>
-              <span style={detailLabelStyle}>Bank:</span>
-              <span style={detailValueStyle}>{details.bank}</span>
-            </div>
-            <div style={detailRowStyle}>
-              <span style={detailLabelStyle}>Account Number:</span>
-              <span style={detailValueStyle}>{details.accountNumber}</span>
-            </div>
-          </div>
-        </div>
-
+        {/* Bank Details */}
         <div>
-          <div style={detailRowStyle}>
-            <span style={detailLabelStyle}>Transaction ID:</span>
-            <span style={transactionIdStyle}>{details.transactionId}</span>
+          <div style={sectionTitleStyle}>
+            {isSender ? "Recipient Details" : "Sender Details"}
           </div>
-          <div style={detailRowStyle}>
-            <span style={detailLabelStyle}>Date & Time:</span>
-            <span style={detailValueStyle}>{formatDate(details.date)}</span>
-          </div>
-          <div style={detailRowStyle}>
-            <span style={detailLabelStyle}>Description:</span>
-            <span style={detailValueStyle}>{details.description || "Bank Transfer"}</span>
-          </div>
-          {details.newBalance && (
-            <div style={detailRowStyle}>
-              <span style={detailLabelStyle}>Your New Balance:</span>
-              <span style={{ ...detailValueStyle, color: '#16a34a', fontWeight: 700 }}>
-                ${details.newBalance.toFixed(2)}
-              </span>
-            </div>
-          )}
-          <div style={detailRowStyle}>
-            <span style={detailLabelStyle}>Status:</span>
-            <span style={statusBadgeStyle}>Completed</span>
-          </div>
+          <table style={tableStyle}>
+            <tbody>
+              <tr>
+                <td style={labelCellStyle}>
+                  {isSender ? "Recipient" : "Sender"}
+                </td>
+                <td style={valueCellStyle}>
+                  {isSender ? details.recipientName : details.senderName}
+                </td>
+              </tr>
+              <tr>
+                <td style={labelCellStyle}>Bank</td>
+                <td style={valueCellStyle}>{details.bank}</td>
+              </tr>
+              <tr>
+                <td style={labelCellStyle}>Account Number</td>
+                <td style={valueCellStyle}>{details.accountNumber}</td>
+              </tr>
+              <tr>
+                <td style={labelCellStyle}>Swift Code</td>
+                <td style={valueCellStyle}>{details.swiftCode || "—"}</td>
+              </tr>
+              <tr>
+                <td style={labelCellStyle}>Routing Number</td>
+                <td style={valueCellStyle}>{details.routingNumber || "—"}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div style={noteBoxStyle}>
-          <strong>Note:</strong>{' '}
-          {isSender 
-            ? "The recipient should receive the funds within 1-2 business days. You'll receive another notification once the transfer is fully processed."
-            : "The funds should reflect in your account shortly. If you don't see the amount within 24 hours, please contact our support team."}
+        {/* Transaction Info */}
+        <div>
+          <div style={sectionTitleStyle}>Transaction Information</div>
+          <table style={tableStyle}>
+            <tbody>
+              <tr>
+                <td style={labelCellStyle}>Transaction ID</td>
+                <td style={valueCellStyle}>{details.transactionId}</td>
+              </tr>
+              <tr>
+                <td style={labelCellStyle}>Date & Time</td>
+                <td style={valueCellStyle}>{formatDate(details.date)}</td>
+              </tr>
+              <tr>
+                <td style={labelCellStyle}>Description</td>
+                <td style={valueCellStyle}>
+                  {details.description || "Bank Transfer"}
+                </td>
+              </tr>
+              {details.newBalance !== undefined && (
+                <tr>
+                  <td style={labelCellStyle}>New Balance</td>
+                  <td
+                    style={{
+                      ...valueCellStyle,
+                      fontWeight: "bold",
+                      color: "#16a34a",
+                    }}
+                  >
+                    ${details.newBalance.toFixed(2)}
+                  </td>
+                </tr>
+              )}
+              <tr>
+                <td style={labelCellStyle}>Status</td>
+                <td style={valueCellStyle}>
+                  <span style={badgeStyle}>Completed</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
+        {/* Footer */}
         <div style={footerStyle}>
-          <p style={{ marginBottom: '5px' }}>Thank you for banking with us!</p>
-          <p style={{ fontSize: '12px', color: '#9ca3af' }}>
-            This is an automated message. Please do not reply to this email.<br />
+          <p>Thank you for banking with us.</p>
+          <p>
+            This is an automated message. Please do not reply.<br />
             Generated on {new Date().toLocaleString()}
           </p>
-<p style={{ fontSize: '12px', color: '#9ca3af' }}>
-  94050 Southwest Germini Drive
-  Beaverton, Oregon 97008, U.S.A
-</p>
+          <p>
+            94050 Southwest Germini Drive<br />
+            Beaverton, Oregon 97008, U.S.A
+          </p>
         </div>
       </div>
     </div>

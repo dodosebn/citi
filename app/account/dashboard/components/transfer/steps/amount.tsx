@@ -10,6 +10,8 @@ const Amount: React.FC<AmountProps> = ({
   recipientEmail,
   description,
   amount,
+  swiftCode,
+    routingNumber,
   setAmount,
 }) => {
   return (
@@ -40,6 +42,14 @@ const Amount: React.FC<AmountProps> = ({
           <div className="flex justify-between">
             <span className="text-gray-600">Email:</span>
             <span className="font-semibold">{recipientEmail}</span>
+          </div>
+             <div className="flex justify-between">
+            <span className="text-gray-600">Swiftcode:</span>
+            <span className="font-semibold">{swiftCode}</span>
+          </div>
+             <div className="flex justify-between">
+            <span className="text-gray-600">Routing Number:</span>
+            <span className="font-semibold">{routingNumber}</span>
           </div>
           {description && (
             <div className="flex justify-between">

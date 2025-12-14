@@ -34,6 +34,11 @@ export interface RecipientInfoProps {
   recipientName: string;
   setRecipientName: (value: string) => void;
   recipientEmail: string;
+   swiftCode: string;
+     routingNumber: string;
+
+  setSwiftCode: (value: string) => void;
+  setRoutingNumber: (value: string) => void;
   setRecipientEmail: (value: string) => void;
   description: string;
   setDescription: (value: string) => void;
@@ -48,6 +53,8 @@ export interface AmountProps {
   description: string;
   amount: string;
   setAmount: (value: string) => void;
+     swiftCode: string;
+     routingNumber: string;
 }
 export interface PinVerificationProps {
   setCurrentStep: (step: FormStep) => void;
@@ -71,5 +78,7 @@ export interface ConfirmationProps {
   amount: string;
   recipientName: string;
   recipientEmail: string;
+  swiftCode: string;
+  routingNumber: string;
   resetForm: () => void;
 }

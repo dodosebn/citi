@@ -14,10 +14,7 @@ import PinVerification from "./transfer/steps/pinVerification";
 import Confirmation from "./transfer/steps/confirmation";
 
 
-interface RecipientDetails {
-  name: string;
-  email: string;
-}
+
 
 
 
@@ -28,6 +25,8 @@ const Transfer = () => {
   const [accountNumber, setAccountNumber] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [swiftCode, setSwiftCode] = useState("");
+  const [routingNumber, setRoutingNumber] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState(["", "", "", ""]);
@@ -168,6 +167,8 @@ const Transfer = () => {
     date: string;
     description: string;
     newBalance?: number;
+    swiftCode: string;
+    routingNumber: string;
   }
 ) => {
   try {
@@ -216,7 +217,7 @@ const Transfer = () => {
         }
         .receipt-row {
           display: flex;
-          justify-content: space-between;
+          gap: 2rem;
           padding: 12px 0;
           border-bottom: 1px dashed #e0e0e0;
           font-size: 14px;
@@ -232,7 +233,7 @@ const Transfer = () => {
           font-family: 'Courier New', monospace;
         }
         .receipt-divider {
-          height: 2px;
+          height: 1px;
           background: repeating-linear-gradient(
             to right,
             transparent,
@@ -370,7 +371,14 @@ const Transfer = () => {
             <span class="receipt-label">Recipient:</span>
             <span class="receipt-value">${details.recipientName}</span>
           </div>
-          
+              <div class="receipt-row">
+                <span class="receipt-label">Swift Code:</span>
+                <span class="receipt-value">${details.swiftCode || "—"}</span>
+          </div>
+          <div class="receipt-row">
+                <span class="receipt-label">Routing Number:</span>
+                <span class="receipt-value">${details.routingNumber || "—"}</span>
+          </div>
           <div class="receipt-row">
             <span class="receipt-label">Recipient Bank:</span>
             <span class="receipt-value">${details.bank}</span>
@@ -389,10 +397,7 @@ const Transfer = () => {
             <span class="receipt-value">${details.description || "Bank Transfer"}</span>
           </div>
           
-          <div class="receipt-row">
-            <span class="receipt-label">Status:</span>
-            <span class="receipt-value" style="color: #4CAF50;">Completed</span>
-          </div>
+         
           
           <div class="receipt-divider"></div>
           
@@ -424,6 +429,10 @@ const Transfer = () => {
               Transaction Ref: ${details.transactionId}<br>
               Generated: ${new Date().toISOString()}
             </p>
+                <p>
+            94050 Southwest Germini Drive<br />
+            Beaverton, Oregon 97008, U.S.A
+          </p>
           </div>
           
         </div>
@@ -503,7 +512,14 @@ const Transfer = () => {
             <span class="receipt-label">Sender Email:</span>
             <span class="receipt-value">${details.senderEmail}</span>
           </div>
-          
+          <div class="receipt-row">
+                <span class="receipt-label">Swift Code:</span>
+                <span class="receipt-value">${details.swiftCode || "—"}</span>
+          </div>
+          <div class="receipt-row">
+                <span class="receipt-label">Routing Number:</span>
+                <span class="receipt-value">${details.routingNumber || "—"}</span>
+          </div>
           <div class="receipt-divider"></div>
           
           <!-- Transaction Details -->
@@ -540,6 +556,10 @@ const Transfer = () => {
               Transaction Ref: ${details.transactionId}<br>
               Generated: ${new Date().toISOString()}
             </p>
+                 <p>
+            94050 Southwest Germini Drive<br />
+            Beaverton, Oregon 97008, U.S.A
+          </p>
           </div>
           
         </div>
@@ -608,11 +628,16 @@ const Transfer = () => {
         .substr(2, 9)}`;
       const transactionDate = new Date().toISOString();
 
-      const recipientDetails: RecipientDetails = {
-        name: recipientName,
-        email: recipientEmail,
-      };
-
+      const recipientDetailsData = {
+  bank: selectedBank,
+  account_number: accountNumber,
+  recipient_name: recipientName,
+  recipient_email: recipientEmail,
+  swift_code: swiftCode,
+  routing_number: routingNumber,
+  description: description,
+  captured_at: new Date().toISOString(),
+};
       const transferDescription = description || `Transfer to ${recipientName}`;
 
       const { error: transactionError } = await supabase
@@ -622,13 +647,14 @@ const Transfer = () => {
           amount: transferAmount,
           type: "transfer",
           description: transferDescription,
-          recipient_details: recipientDetails,
+          recipient_details: recipientDetailsData,
           bank_name: selectedBank,
           account_number: accountNumber,
           transaction_id: transactionId,
           // status: "completed",
           created_at: transactionDate,
         });
+console.log("RECIPIENT DETAILS", recipientDetailsData);
 
       if (transactionError) {
         console.error("Transaction record failed:", transactionError);
@@ -647,6 +673,8 @@ const Transfer = () => {
         senderEmail: user?.email || "",
         recipientName,
         recipientEmail,
+        swiftCode,
+        routingNumber,
         bank: selectedBank,
         accountNumber,
         transactionId,
@@ -778,6 +806,10 @@ const Transfer = () => {
     description={description}
     setDescription={setDescription}
     setCurrentStep={setCurrentStep}
+      swiftCode={swiftCode}
+  setSwiftCode={setSwiftCode}
+  routingNumber={routingNumber}
+  setRoutingNumber={setRoutingNumber}
   />
             )}
 
@@ -789,7 +821,7 @@ const Transfer = () => {
   recipientEmail={recipientEmail}
   description={description}
   amount={amount}
-  setAmount={setAmount} />
+  setAmount={setAmount} swiftCode={swiftCode} routingNumber={routingNumber}/>
             )}
 
             {currentStep === "pin-verification" && (
@@ -819,6 +851,8 @@ const Transfer = () => {
   recipientName={recipientName}
   recipientEmail={recipientEmail}
   resetForm={resetForm}
+  swiftCode={swiftCode}
+  routingNumber={routingNumber}
 />
             )}
           </form>

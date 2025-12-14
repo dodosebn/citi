@@ -5,6 +5,7 @@ import { supabase } from "@/app/store/supabase";
 import { useAppStore } from "@/app/store/useApp";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Wallent from "./saveComp/wallent";
 import {
   FaPiggyBank,
   FaArrowUp,
@@ -21,6 +22,9 @@ import {
   FaTrash,
   FaExclamationTriangle
 } from "react-icons/fa";
+import DeleteModal from "./saveComp/deleteModal";
+import Loading from "./saveComp/loading";
+import SaveOverLay from "./saveComp/saveOverLay";
 
 type SavingsPlan = {
   id: string;
@@ -49,6 +53,181 @@ type UserSaving = {
   days_since_start?: number;
 };
 
+// Email sending functions
+const sendSaveEmail = async (amount: number, newBalance: number, planName: string, email: string) => {
+  if (!email) return;
+
+  const html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { background:#f5f7fa; padding:20px; font-family:Arial, sans-serif; }
+      .receipt { max-width:600px; margin:auto; background:#fff; border:1px solid #1a237e; border-radius:8px; overflow:hidden; }
+      .header { background:#1a237e; color:#fff; text-align:center; padding:20px; }
+      .content { padding:25px; }
+      .row { display:flex; justify-content:space-between; border-bottom:1px dashed #ddd; padding:10px 0; }
+      .total { font-size:18px; font-weight:bold; padding:15px 0; margin:20px 0; border-top:2px solid #333; border-bottom:2px solid #333; }
+      .success { background:#e8f5e9; color:#2e7d32; padding:12px; text-align:center; border-left:4px solid #4caf50; margin-bottom:20px; }
+      .footer { text-align:center; font-size:12px; color:#666; margin-top:20px; }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <div class="header">
+        <h2>Citibank Savings</h2>
+        <p>Deposit Confirmation</p>
+      </div>
+
+      <div class="content">
+        <div class="success">✓ SAVING SUCCESSFUL</div>
+
+        <div class="row"><span>Plan:</span><span>${planName}</span></div>
+        <div class="row"><span>Amount Saved:</span><span>$${amount.toFixed(2)}</span></div>
+
+        <div class="total">
+          <span>New Balance:</span>
+          <span>$${newBalance.toFixed(2)}</span>
+        </div>
+
+        <div class="footer">
+          <p>This is an automated email. Generated: ${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  await fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: email,
+      subject: `You've Saved $${amount.toFixed(2)} in ${planName}`,
+      html,
+    }),
+  });
+};
+
+const sendWithdrawEmail = async (withdrawAmount: number, netAmount: number, newBalance: number, planName: string, email: string, penalty: number = 0) => {
+  if (!email) return;
+
+  const html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { background:#f5f7fa; padding:20px; font-family:Arial, sans-serif; }
+      .receipt { max-width:600px; margin:auto; background:#fff; border:1px solid #1a237e; border-radius:8px; overflow:hidden; }
+      .header { background:#1a237e; color:#fff; text-align:center; padding:20px; }
+      .content { padding:25px; }
+      .row { display:flex; justify-content:space-between; border-bottom:1px dashed #ddd; padding:10px 0; }
+      .total { font-size:18px; font-weight:bold; padding:15px 0; margin:20px 0; border-top:2px solid #333; border-bottom:2px solid #333; }
+      .success { background:#fff3e0; color:#f57c00; padding:12px; text-align:center; border-left:4px solid #ff9800; margin-bottom:20px; }
+      .footer { text-align:center; font-size:12px; color:#666; margin-top:20px; }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <div class="header">
+        <h2>Citibank Savings</h2>
+        <p>Withdrawal Confirmation</p>
+      </div>
+
+      <div class="content">
+        <div class="success">✓ WITHDRAWAL SUCCESSFUL</div>
+
+        <div class="row"><span>Plan:</span><span>${planName}</span></div>
+        <div class="row"><span>Amount Requested:</span><span>$${withdrawAmount.toFixed(2)}</span></div>
+        ${penalty > 0 ? `<div class="row"><span>Penalty Fee:</span><span>$${penalty.toFixed(2)}</span></div>` : ''}
+        <div class="row"><span>Net Amount Credited:</span><span>$${netAmount.toFixed(2)}</span></div>
+
+        <div class="total">
+          <span>New Balance:</span>
+          <span>$${newBalance.toFixed(2)}</span>
+        </div>
+
+        <div class="footer">
+          <p>This is an automated email. Generated: ${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  await fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: email,
+      subject: `You've Withdrawn $${netAmount.toFixed(2)} from ${planName}`,
+      html,
+    }),
+  });
+};
+
+const sendDeleteEmail = async (refundAmount: number, penalty: number, newBalance: number, planName: string, email: string) => {
+  if (!email) return;
+
+  const html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { background:#f5f7fa; padding:20px; font-family:Arial, sans-serif; }
+      .receipt { max-width:600px; margin:auto; background:#fff; border:1px solid #1a237e; border-radius:8px; overflow:hidden; }
+      .header { background:#1a237e; color:#fff; text-align:center; padding:20px; }
+      .content { padding:25px; }
+      .row { display:flex; justify-content:space-between; border-bottom:1px dashed #ddd; padding:10px 0; }
+      .total { font-size:18px; font-weight:bold; padding:15px 0; margin:20px 0; border-top:2px solid #333; border-bottom:2px solid #333; }
+      .notice { background:#ffebee; color:#c62828; padding:12px; text-align:center; border-left:4px solid #f44336; margin-bottom:20px; }
+      .footer { text-align:center; font-size:12px; color:#666; margin-top:20px; }
+    </style>
+  </head>
+  <body>
+    <div class="receipt">
+      <div class="header">
+        <h2>Citibank Savings</h2>
+        <p>Account Closure Confirmation</p>
+      </div>
+
+      <div class="content">
+        <div class="notice">⚠ ACCOUNT CLOSED</div>
+
+        <div class="row"><span>Plan:</span><span>${planName}</span></div>
+        ${penalty > 0 ? `<div class="row"><span>Early Closure Penalty:</span><span>$${penalty.toFixed(2)}</span></div>` : ''}
+        <div class="row"><span>Refund Amount:</span><span>$${refundAmount.toFixed(2)}</span></div>
+
+        <div class="total">
+          <span>New Account Balance:</span>
+          <span>$${newBalance.toFixed(2)}</span>
+        </div>
+
+        <div class="footer">
+          <p>This is an automated email. Generated: ${new Date().toLocaleString()}</p>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  await fetch("/api/send-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: email,
+      subject: `Savings Account Closed - $${refundAmount.toFixed(2)} Refunded`,
+      html,
+    }),
+  });
+};
+
 export default function SavingsPage() {
   const [plans, setPlans] = useState<SavingsPlan[]>([]);
   const [userSavings, setUserSavings] = useState<UserSaving[]>([]);
@@ -75,7 +254,6 @@ export default function SavingsPage() {
     try {
       setLoading(true);
       
-      // Fetch savings plans
       const { data: plansData, error: plansError } = await supabase
         .from("savings_plans")
         .select("*")
@@ -84,7 +262,6 @@ export default function SavingsPage() {
       if (plansError) throw plansError;
       setPlans(plansData || []);
 
-      // Fetch user savings if logged in
       if (user?.id) {
         const { data: savingsData, error: savingsError } = await supabase
           .from("user_savings")
@@ -97,7 +274,6 @@ export default function SavingsPage() {
 
         if (savingsError) throw savingsError;
 
-        // Calculate days since start
         const enrichedSavings = (savingsData || []).map(saving => {
           const startDate = new Date(saving.start_date);
           const today = new Date();
@@ -145,7 +321,7 @@ export default function SavingsPage() {
   };
 
   const handleSaveMoney = async () => {
-    if (!selectedPlan || !user?.id) return;
+    if (!selectedPlan || !user?.id || !user?.email) return;
 
     const amount = parseFloat(savingsAmount);
     const minAmount = selectedPlan.min_amount || 0;
@@ -192,7 +368,7 @@ export default function SavingsPage() {
 
       if (balanceError) throw balanceError;
 
-      // 3. Record transaction - Use "debit" type for saving money (money leaving main account)
+      // 3. Record transaction
       const transactionData = {
         user_id: user.id,
         type: "debit",
@@ -226,6 +402,14 @@ export default function SavingsPage() {
           status: "completed"
         });
 
+      // 5. Send email confirmation
+      try {
+        await sendSaveEmail(amount, newBalance, selectedPlan.name, user.email);
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       // Update local state
       useAppStore.setState((prev: any) => ({
         user: {
@@ -234,7 +418,7 @@ export default function SavingsPage() {
         },
       }));
 
-      toast.success(`$${amount.toLocaleString()} saved successfully!`);
+      toast.success(`$${amount.toLocaleString()} saved successfully! Email confirmation sent.`);
       
       // Refresh data
       await fetchSavingsData();
@@ -250,7 +434,7 @@ export default function SavingsPage() {
   };
 
   const handleWithdrawMoney = async () => {
-    if (!selectedSavingId || !user?.id) return;
+    if (!selectedSavingId || !user?.id || !user?.email) return;
 
     const saving = userSavings.find(s => s.id === selectedSavingId);
     if (!saving) {
@@ -286,13 +470,13 @@ export default function SavingsPage() {
       }
 
       // 1. Update user_savings
-      const newBalance = saving.total_balance - withdrawAmt;
-      const isFullWithdrawal = newBalance <= 0;
+      const newSavingsBalance = saving.total_balance - withdrawAmt;
+      const isFullWithdrawal = newSavingsBalance <= 0;
       
       const { error: updateError } = await supabase
         .from("user_savings")
         .update({
-          total_balance: newBalance,
+          total_balance: newSavingsBalance,
           status: isFullWithdrawal ? 'withdrawn' : 'active',
           withdrawal_date: isFullWithdrawal ? new Date().toISOString() : null
         })
@@ -311,7 +495,7 @@ export default function SavingsPage() {
 
       if (balanceError) throw balanceError;
 
-      // 3. Record transaction - Use "credit" type for withdrawal (money coming into main account)
+      // 3. Record transaction
       const transactionData = {
         user_id: user.id,
         type: "credit",
@@ -341,9 +525,17 @@ export default function SavingsPage() {
           amount: withdrawAmt,
           description: penaltyFee > 0 ? `Withdrawal with penalty of $${penaltyFee.toFixed(2)}` : "Withdrawal",
           balance_before: saving.total_balance,
-          balance_after: newBalance,
+          balance_after: newSavingsBalance,
           status: "completed"
         });
+
+      // 5. Send email confirmation
+      try {
+        await sendWithdrawEmail(withdrawAmt, netWithdrawal, newUserBalance, plan?.name || "Savings Account", user.email, penaltyFee);
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
 
       // Update local state
       useAppStore.setState((prev: any) => ({
@@ -353,7 +545,7 @@ export default function SavingsPage() {
         },
       }));
 
-      toast.success(`$${netWithdrawal.toLocaleString()} withdrawn successfully!`);
+      toast.success(`$${netWithdrawal.toLocaleString()} withdrawn successfully! Email confirmation sent.`);
       
       // Refresh data
       await fetchSavingsData();
@@ -369,98 +561,104 @@ export default function SavingsPage() {
     }
   };
 
-// UPDATED handleDeleteSavings function
-const handleDeleteSavings = async () => {
-  if (!savingToDelete || !user?.id) return;
+  const handleDeleteSavings = async () => {
+    if (!savingToDelete || !user?.id || !user?.email) return;
 
-  const saving = savingToDelete;
-  setProcessing(true);
+    const saving = savingToDelete;
+    setProcessing(true);
 
-  try {
-    const plan = saving.savings_plans;
-    let penaltyFee = 0;
-    let refundAmount = saving.total_balance;
+    try {
+      const plan = saving.savings_plans;
+      let penaltyFee = 0;
+      let refundAmount = saving.total_balance;
 
-    // Check for early withdrawal penalty if deleting before minimum duration
-    if (plan && saving.days_since_start && saving.days_since_start < plan.min_duration_days) {
-      penaltyFee = (saving.total_balance * plan.withdrawal_fee) / 100;
-      refundAmount = saving.total_balance - penaltyFee;
-      toast.warning(`Early deletion penalty applied: $${penaltyFee.toFixed(2)}`);
+      // Check for early withdrawal penalty if deleting before minimum duration
+      if (plan && saving.days_since_start && saving.days_since_start < plan.min_duration_days) {
+        penaltyFee = (saving.total_balance * plan.withdrawal_fee) / 100;
+        refundAmount = saving.total_balance - penaltyFee;
+        toast.warning(`Early deletion penalty applied: $${penaltyFee.toFixed(2)}`);
+      }
+
+      // 1. FIRST delete related savings_transactions
+      const { error: deleteTransactionsError } = await supabase
+        .from("savings_transactions")
+        .delete()
+        .eq("savings_id", saving.id);
+
+      if (deleteTransactionsError) {
+        console.error("Error deleting transactions:", deleteTransactionsError);
+        throw new Error("Failed to delete related transactions. Please try again.");
+      }
+
+      // 2. THEN delete from user_savings
+      const { error: deleteError } = await supabase
+        .from("user_savings")
+        .delete()
+        .eq("id", saving.id);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Add refund to user balance
+      const currentUserBalance = user?.accountBalance ?? 0;
+      const newUserBalance = currentUserBalance + refundAmount;
+      
+      const { error: balanceError } = await supabase
+        .from("citisignup")
+        .update({ account_balance: newUserBalance })
+        .eq("id", user.id);
+
+      if (balanceError) throw balanceError;
+
+      // 4. Record transaction for refund
+      const transactionData = {
+        user_id: user.id,
+        type: "credit",
+        amount: refundAmount,
+        description: `Savings account deletion${penaltyFee > 0 ? ` (penalty: $${penaltyFee.toFixed(2)})` : ''}`,
+        status: "completed",
+        category: "savings",
+        recipient: "Main Account",
+        sender: "Savings Account",
+        reference: generateReference(),
+        created_at: new Date().toISOString()
+      };
+
+      const { error: txError } = await supabase
+        .from("transactions")
+        .insert(transactionData);
+
+      if (txError) throw txError;
+
+      // 5. Send email confirmation
+      try {
+        await sendDeleteEmail(refundAmount, penaltyFee, newUserBalance, plan?.name || "Savings Account", user.email);
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
+      // Update local state
+      useAppStore.setState((prev: any) => ({
+        user: {
+          ...prev.user,
+          accountBalance: newUserBalance,
+        },
+      }));
+
+      toast.success(`Savings account deleted. $${refundAmount.toLocaleString()} refunded to your balance. Email confirmation sent.`);
+      
+      // Refresh data
+      await fetchSavingsData();
+      setIsDeleteModalOpen(false);
+      setSavingToDelete(null);
+
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error.message || "Failed to delete savings account");
+    } finally {
+      setProcessing(false);
     }
-
-    // 1. FIRST delete related savings_transactions
-    const { error: deleteTransactionsError } = await supabase
-      .from("savings_transactions")
-      .delete()
-      .eq("savings_id", saving.id);
-
-    if (deleteTransactionsError) {
-      console.error("Error deleting transactions:", deleteTransactionsError);
-      // If we can't delete transactions, we can't delete the savings account
-      throw new Error("Failed to delete related transactions. Please try again.");
-    }
-
-    // 2. THEN delete from user_savings
-    const { error: deleteError } = await supabase
-      .from("user_savings")
-      .delete()
-      .eq("id", saving.id);
-
-    if (deleteError) throw deleteError;
-
-    // 3. Add refund to user balance
-    const currentUserBalance = user?.accountBalance ?? 0;
-    const newUserBalance = currentUserBalance + refundAmount;
-    
-    const { error: balanceError } = await supabase
-      .from("citisignup")
-      .update({ account_balance: newUserBalance })
-      .eq("id", user.id);
-
-    if (balanceError) throw balanceError;
-
-    // 4. Record transaction for refund
-    const transactionData = {
-      user_id: user.id,
-      type: "credit",
-      amount: refundAmount,
-      description: `Savings account deletion${penaltyFee > 0 ? ` (penalty: $${penaltyFee.toFixed(2)})` : ''}`,
-      status: "completed",
-      category: "savings",
-      recipient: "Main Account",
-      sender: "Savings Account",
-      reference: generateReference(),
-      created_at: new Date().toISOString()
-    };
-
-    const { error: txError } = await supabase
-      .from("transactions")
-      .insert(transactionData);
-
-    if (txError) throw txError;
-
-    // Update local state
-    useAppStore.setState((prev: any) => ({
-      user: {
-        ...prev.user,
-        accountBalance: newUserBalance,
-      },
-    }));
-
-    toast.success(`Savings account deleted. $${refundAmount.toLocaleString()} refunded to your balance.`);
-    
-    // Refresh data
-    await fetchSavingsData();
-    setIsDeleteModalOpen(false);
-    setSavingToDelete(null);
-
-  } catch (error: any) {
-    console.error("Delete error:", error);
-    toast.error(error.message || "Failed to delete savings account");
-  } finally {
-    setProcessing(false);
-  }
-};
+  };
 
   const getTotalSavings = () => {
     return userSavings
@@ -474,19 +672,13 @@ const handleDeleteSavings = async () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading savings...</p>
-        </div>
-      </div>
+    <Loading />
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -495,42 +687,12 @@ const handleDeleteSavings = async () => {
                 Save money securely and earn interest over time
               </p>
             </div>
-            
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-gray-500 mb-2">
-                    <FaWallet className="mr-2" />
-                    <span className="text-sm">Available Balance</span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    ${balance.toLocaleString()}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-gray-500 mb-2">
-                    <FaPiggyBank className="mr-2" />
-                    <span className="text-sm">Total Savings</span>
-                  </div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    ${getTotalSavings().toLocaleString()}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-gray-500 mb-2">
-                    <FaChartLine className="mr-2" />
-                    <span className="text-sm">Interest Earned</span>
-                  </div>
-                  <div className="text-2xl font-bold text-green-600">
-                    +${getTotalInterestEarned().toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            </div>
+
+            <Wallent balance={balance} getTotalSavings={getTotalSavings}
+             getTotalInterestEarned={getTotalInterestEarned} />
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
@@ -567,7 +729,6 @@ const handleDeleteSavings = async () => {
           </div>
         </div>
 
-        {/* Content based on active tab */}
         {activeTab === "plans" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map((plan) => {
@@ -679,7 +840,6 @@ const handleDeleteSavings = async () => {
                       className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100"
                     >
                       <div className="p-6">
-                        {/* Header */}
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <h3 className="text-xl font-bold text-gray-900">
@@ -710,7 +870,6 @@ const handleDeleteSavings = async () => {
                           </div>
                         </div>
 
-                        {/* Stats */}
                         <div className="grid grid-cols-2 gap-4 mb-6">
                           <div className="bg-blue-50 rounded-lg p-3">
                             <div className="text-sm text-blue-600 font-medium">Principal</div>
@@ -738,7 +897,6 @@ const handleDeleteSavings = async () => {
                           </div>
                         </div>
 
-                        {/* Early withdrawal warning */}
                         {isEarlyWithdrawal && (
                           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <div className="flex items-center text-yellow-800">
@@ -783,16 +941,7 @@ const handleDeleteSavings = async () => {
                                 <FaArrowDown className="mr-2" />
                                 Withdraw
                               </button>
-                              <button
-                                onClick={() => {
-                                  // Add more money to this savings
-                                  toast.info("Add more money feature coming soon!");
-                                }}
-                                className="flex-1 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                              >
-                                <FaArrowUp className="mr-2" />
-                                Add More
-                              </button>
+                        
                             </>
                           )}
                           <button
@@ -812,105 +961,17 @@ const handleDeleteSavings = async () => {
           </div>
         )}
 
-        {/* Save Money Modal */}
-        {isSaveModalOpen && selectedPlan && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-scale-in">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  Save Money
-                </h3>
-                <button
-                  onClick={() => setIsSaveModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  disabled={processing}
-                >
-                  ✕
-                </button>
-              </div>
+     <SaveOverLay  isSaveModalOpen={isSaveModalOpen}
+  setIsSaveModalOpen={setIsSaveModalOpen}
+  selectedPlan={selectedPlan}
+  savingsAmount={savingsAmount}
+  setSavingsAmount={setSavingsAmount}
+  balance={balance}
+  processing={processing}
+  handleSaveMoney={handleSaveMoney}
+  calculateProjectedInterest={calculateProjectedInterest}
+  />
 
-              <div className="space-y-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Plan:</span>
-                      <p className="font-semibold text-blue-700">{selectedPlan.name}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Interest Rate:</span>
-                      <p className="font-semibold">{selectedPlan.interest_rate}% APY</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Amount to Save ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={savingsAmount}
-                    onChange={(e) => setSavingsAmount(e.target.value)}
-                    min={selectedPlan.min_amount}
-                    max={selectedPlan.max_amount || balance}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    placeholder="Enter amount"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-2">
-                    <span>Available: ${balance.toLocaleString()}</span>
-                    <span>Min: ${selectedPlan.min_amount.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {savingsAmount && !isNaN(parseFloat(savingsAmount)) && (
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <h4 className="font-semibold text-green-800 mb-2">
-                      Projected Earnings (1 Year)
-                    </h4>
-                    <div className="text-sm text-green-700">
-                      <p>
-                        Interest Earned: +$
-                        {calculateProjectedInterest(parseFloat(savingsAmount), selectedPlan.interest_rate).toFixed(2)}
-                      </p>
-                      <p>
-                        Total Value: $
-                        {(parseFloat(savingsAmount) + calculateProjectedInterest(parseFloat(savingsAmount), selectedPlan.interest_rate)).toLocaleString(undefined, {
-                          maximumFractionDigits: 2,
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsSaveModalOpen(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-400 transition-colors"
-                  disabled={processing}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveMoney}
-                  disabled={processing}
-                  className="flex-1 bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {processing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    `Save $${parseFloat(savingsAmount || '0').toLocaleString()}`
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Withdraw Money Modal */}
         {isWithdrawModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-scale-in">
@@ -972,126 +1033,12 @@ const handleDeleteSavings = async () => {
             </div>
           </div>
         )}
+<DeleteModal  isDeleteModalOpen={isDeleteModalOpen}
+  savingToDelete={savingToDelete}
+  setIsDeleteModalOpen={  setIsDeleteModalOpen}
+  processing={ processing}
+  handleDeleteSavings={handleDeleteSavings}/>
 
-        {/* Delete Savings Modal */}
-        {isDeleteModalOpen && savingToDelete && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-scale-in">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  Delete Savings Account
-                </h3>
-                <button
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  disabled={processing}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="flex items-center text-red-800 mb-2">
-                    <FaExclamationTriangle className="mr-2" />
-                    <span className="font-semibold">Warning</span>
-                  </div>
-                  <p className="text-sm text-red-700">
-                    This action will permanently delete your savings account and refund the balance to your main account.
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Account:</span>
-                      <p className="font-semibold text-blue-700">
-                        {savingToDelete.savings_plans?.name || "Savings Account"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Current Balance:</span>
-                      <p className="font-semibold">
-                        ${savingToDelete.total_balance.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {savingToDelete.savings_plans && savingToDelete.days_since_start && 
-                 savingToDelete.days_since_start < savingToDelete.savings_plans.min_duration_days && (
-                  <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                    <div className="flex items-center text-yellow-800 mb-2">
-                      <FaClock className="mr-2" />
-                      <span className="font-semibold">Early Deletion Penalty</span>
-                    </div>
-                    <p className="text-sm text-yellow-700">
-                      You are deleting before the minimum duration ({savingToDelete.savings_plans.min_duration_days} days). 
-                      A penalty of {savingToDelete.savings_plans.withdrawal_fee}% will be applied.
-                    </p>
-                  </div>
-                )}
-
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <h4 className="font-semibold text-green-800 mb-2">
-                    Refund Summary
-                  </h4>
-                  <div className="text-sm text-green-700">
-                    {(() => {
-                      const plan = savingToDelete.savings_plans;
-                      let penaltyFee = 0;
-                      let refundAmount = savingToDelete.total_balance;
-
-                      if (plan && savingToDelete.days_since_start && 
-                          savingToDelete.days_since_start < plan.min_duration_days) {
-                        penaltyFee = (savingToDelete.total_balance * plan.withdrawal_fee) / 100;
-                        refundAmount = savingToDelete.total_balance - penaltyFee;
-                      }
-
-                      return (
-                        <>
-                          <p className="mb-1">Total Balance: ${savingToDelete.total_balance.toLocaleString()}</p>
-                          {penaltyFee > 0 && (
-                            <p className="mb-1 text-yellow-600">
-                              Penalty: -${penaltyFee.toFixed(2)}
-                            </p>
-                          )}
-                          <p className="font-bold">
-                            Refund Amount: ${refundAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl hover:bg-gray-400 transition-colors"
-                  disabled={processing}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteSavings}
-                  disabled={processing}
-                  className="flex-1 bg-red-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {processing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Deleting...
-                    </>
-                  ) : (
-                    'Delete Account'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       <ToastContainer position="bottom-right" autoClose={3000} />
     </div>

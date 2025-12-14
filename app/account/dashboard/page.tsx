@@ -1,4 +1,3 @@
-import React from 'react'
 import BankingDetails from './components/bankingDetails'
 
 const MainPage = () => {

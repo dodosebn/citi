@@ -11,7 +11,6 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
   isCopied,
   query,
   handleSearch,
-  handleCustomBankInput,
   banks,
   isDropdownOpen,
   setIsDropdownOpen,
@@ -20,10 +19,18 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
   dropdownRef,
   Banks,
   isVerifying,
-  handleBankSelect
+  handleBankSelect,
 }) => {
+  const handleContinue = () => {
+    // If user typed a bank but didn’t select one, treat as custom
+    if (!selectedBank && query.trim()) {
+      setSelectedBank(query.trim());
+    }
+  };
+
   return (
     <>
+      {/* Account Number */}
       <div>
         <label className="block text-sm font-semibold mb-2">
           Account Number
@@ -46,32 +53,38 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
         </div>
       </div>
 
+      {/* Bank Name */}
       <div ref={dropdownRef}>
         <label className="block text-sm font-semibold mb-2">Bank Name</label>
+
         <div className="relative">
-          <div className="flex border rounded-xl px-4">
-            <div className="mt-4">
-              <TbHomeFilled className="text-gray-400 mr-2" />
-            </div>
+          <div className="flex border rounded-xl px-4 items-center">
+            <TbHomeFilled className="text-gray-400 mr-2" />
+
             <input
               type="text"
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
-              onBlur={handleCustomBankInput}
               onFocus={() =>
                 query && banks.length > 0 && setIsDropdownOpen(true)
               }
               placeholder="Search or type bank name..."
               className="flex-grow py-3 outline-none"
             />
+
             <button
               type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
               disabled={banks.length === 0}
             >
-              <FaChevronDown className={isDropdownOpen ? "rotate-180" : ""} />
+              <FaChevronDown
+                className={`transition-transform ${
+                  isDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
           </div>
+
           {isDropdownOpen && (
             <ul className="absolute z-10 w-full bg-white border rounded-md mt-2 max-h-60 overflow-y-auto shadow-lg">
               {banks.length > 0 ? (
@@ -79,10 +92,12 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
                   <li
                     key={i}
                     className="px-4 py-2 hover:bg-blue-50 cursor-pointer"
-                    onClick={() => handleBankSelect(b.NAME)}
+                    onMouseDown={() => handleBankSelect(b.NAME)}
                   >
                     {b.NAME}{" "}
-                    <span className="text-sm text-gray-500">({b.REGION})</span>
+                    <span className="text-sm text-gray-500">
+                      ({b.REGION})
+                    </span>
                   </li>
                 ))
               ) : (
@@ -93,17 +108,22 @@ const StepBankDetails: React.FC<StepBankDetailsProps> = ({
             </ul>
           )}
         </div>
-        {selectedBank && !Banks.some((bank) => bank.NAME === selectedBank) && (
-          <p className="text-sm text-blue-600 mt-2">
-            Using custom bank:{" "}
-            <span className="font-semibold">{selectedBank}</span>
-          </p>
-        )}
+
+        {/* Custom bank indicator */}
+        {selectedBank &&
+          !Banks.some((bank) => bank.NAME === selectedBank) && (
+            <p className="text-sm text-blue-600 mt-2">
+              Using custom bank:{" "}
+              <span className="font-semibold">{selectedBank}</span>
+            </p>
+          )}
       </div>
 
+      {/* Continue Button */}
       <button
         type="submit"
-        disabled={!selectedBank || !accountNumber || isVerifying}
+        onClick={handleContinue}
+        disabled={(!selectedBank && !query) || !accountNumber || isVerifying}
         className="w-full bg-blue-600 text-white py-3 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isVerifying ? "Verifying..." : "Continue to Recipient Info"}
