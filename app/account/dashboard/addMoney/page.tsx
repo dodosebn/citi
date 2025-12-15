@@ -3,7 +3,7 @@ import AddMoneyPage from './addMony'
 
 const page = () => {
   return (
-    <div>
+    <div className='mt-10'>
         <AddMoneyPage />
     </div>
   )

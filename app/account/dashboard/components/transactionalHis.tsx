@@ -256,7 +256,6 @@ export default function TransactionHis({ userId }: { userId: string }) {
           </ul>
         )}
       </div>
-
       {selectedTransaction && (
         <TransactionDetails
           transaction={selectedTransaction}

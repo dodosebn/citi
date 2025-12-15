@@ -44,7 +44,6 @@ export default function MyInvestmentsPage() {
     try {
       setLoading(true);
       
-      // Fetch investments with plan details
       const { data: investmentsData, error } = await supabase
         .from("user_investments")
         .select(`
@@ -56,7 +55,6 @@ export default function MyInvestmentsPage() {
 
       if (error) throw error;
 
-      // Calculate additional details for each investment
       const enrichedInvestments = investmentsData?.map((inv: any) => {
         const plan = inv.investment_plans;
         const createdDate = new Date(inv.created_at);
@@ -66,7 +64,6 @@ export default function MyInvestmentsPage() {
         const today = new Date();
         const daysRemaining = Math.max(0, Math.ceil((maturityDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
         
-        // Calculate expected returns
         const calculatedReturns = plan ? 
           inv.amount * (plan.interest_rate / 100) * (plan.duration_months / 12) : 0;
 
@@ -80,7 +77,6 @@ export default function MyInvestmentsPage() {
 
       setInvestments(enrichedInvestments);
 
-      // Calculate totals
       const totalInv = enrichedInvestments.reduce((sum: number, inv: Investment) => sum + inv.amount, 0);
       const totalRet = enrichedInvestments.reduce((sum: number, inv: any) => sum + (inv.calculated_returns || 0), 0);
       
@@ -359,7 +355,7 @@ export default function MyInvestmentsPage() {
                   </div>
 
                   {/* Action Button */}
-                  <div className="mt-6">
+                  {/* <div className="mt-6">
                     <button
                       onClick={() => {
                         // Add view details or manage investment functionality
@@ -369,7 +365,7 @@ export default function MyInvestmentsPage() {
                     >
                       View Details
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ))}
@@ -427,7 +423,7 @@ export default function MyInvestmentsPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
                 <Link
-                  href="/account/dashboard/investment"
+                  href="/invest-part/investment"
                   className="block w-full text-center py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   Invest More

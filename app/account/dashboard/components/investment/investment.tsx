@@ -6,6 +6,7 @@ import { useAppStore } from "@/app/store/useApp";
 import { toast, ToastContainer } from "react-toastify";
 import Link from "next/link";
 import { IoArrowBack } from "react-icons/io5";
+import { useRouter } from "next/navigation";
 
 type Plan = {
   id: string;
@@ -100,6 +101,14 @@ const sendInvestmentEmail = async (
 };
 
 export default function InvestmentsPage() {
+    const router = useRouter();
+  const { setCurrentView } = useAppStore();
+
+  const handleBack = () => {
+    setCurrentView("home");   
+    router.push("/account/dashboard");
+  };
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
@@ -268,14 +277,16 @@ export default function InvestmentsPage() {
     <div className="min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between">
-          <Link
-            href="/account/dashboard"
-            className="bg-blue-500 flex items-center rounded-full px-4 py-2"
-          >
+          <div className="mb-6 md:mt-0">
+            <button
+      onClick={handleBack}
+      className="bg-blue-500 flex items-center rounded-full px-4 py-2 text-white gap-2"
+    >
             <IoArrowBack size={18} />
             Dashboard
-          </Link>
-          <Link href="/invest-part/myInvestment" className="text-blue-700">
+          </button>
+          </div>
+          <Link href="/invest-part/myInvestment" className="text-blue-700 underline">
             View Made investments
           </Link>
         </div>

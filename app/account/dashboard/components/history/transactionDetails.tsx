@@ -363,7 +363,7 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
 
           {/* Action Buttons */}
           <div className="sticky bottom-0 bg-white border-t p-4">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid items-center grid-cols-3 gap-2">
               <button
                 onClick={shareToWhatsApp}
                 className="flex flex-col items-center p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition"
@@ -382,14 +382,14 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                 <span className="text-xs">PDF</span>
               </button>
 
-              <button
+              {/* <button
                 onClick={printTransaction}
                 className="flex flex-col items-center p-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition"
                 title="Print Receipt"
               >
                 <Printer className="w-5 h-5 mb-1" />
                 <span className="text-xs">Print</span>
-              </button>
+              </button> */}
 
               <button
                 onClick={copyToClipboard}
@@ -400,8 +400,14 @@ export const TransactionDetails: React.FC<TransactionDetailsProps> = ({
                 <span className="text-xs">Copy</span>
               </button>
             </div>
+           <div className="mt-4 text-center p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+  <p className="text-sm text-gray-700">
+    To view related receipts, please check your email.
+  </p>
+</div>
           </div>
         </div>
+
       </div>
     </>
   );

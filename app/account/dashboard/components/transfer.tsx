@@ -629,14 +629,14 @@ const Transfer = () => {
       const transactionDate = new Date().toISOString();
 
       const recipientDetailsData = {
-  bank: selectedBank,
-  account_number: accountNumber,
-  recipient_name: recipientName,
-  recipient_email: recipientEmail,
-  swift_code: swiftCode,
-  routing_number: routingNumber,
+   bank: selectedBank,
+  accountNumber: accountNumber,        
+  recipientName: recipientName,       
+  recipientEmail: recipientEmail,      
+  swiftCode: swiftCode,                
+  routingNumber: routingNumber,        
   description: description,
-  captured_at: new Date().toISOString(),
+  capturedAt: new Date().toISOString()
 };
       const transferDescription = description || `Transfer to ${recipientName}`;
 
@@ -647,14 +647,14 @@ const Transfer = () => {
           amount: transferAmount,
           type: "transfer",
           description: transferDescription,
-          recipient_details: recipientDetailsData,
+          recipient_details: JSON.stringify(recipientDetailsData),
           bank_name: selectedBank,
           account_number: accountNumber,
           transaction_id: transactionId,
           // status: "completed",
           created_at: transactionDate,
         });
-console.log("RECIPIENT DETAILS", recipientDetailsData);
+  
 
       if (transactionError) {
         console.error("Transaction record failed:", transactionError);

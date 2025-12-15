@@ -17,24 +17,27 @@ export default function InvestmentOTPVerification() {
   const router = useRouter();
   const { user } = useAppStore();
 
-  useEffect(() => {
-    if (!user?.email) {
-      router.push("/login");
-      return;
-    }
-    
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+const hasSentOTP = useRef(false);
 
-    return () => clearInterval(timer);
-  }, [user, router]);
+useEffect(() => {
+  if (!user?.email || hasSentOTP.current) return;
+
+  hasSentOTP.current = true;
+  sendOTP(false);
+
+  const timer = setInterval(() => {
+    setCountdown((prev) => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [user]);
+
 
   const sendOTP = async (isResend = false) => {
     if (!user?.email) return;
@@ -143,6 +146,7 @@ export default function InvestmentOTPVerification() {
   };
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
