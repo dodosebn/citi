@@ -20,6 +20,7 @@ import LoanPage from "./loan/loanPage";
 import InvestmentsPage from "./investment/investment";
 import Transfer from "./transfer";
 import SavingsPage from "../save/page";
+import InvestmentOTPVerification from "@/app/invest-part/otp-verification/page";
 
 const BankingDetails: React.FC = () => {
   const { user, currentView, setUser } = useAppStore();
@@ -138,7 +139,8 @@ const BankingDetails: React.FC = () => {
       case "loan":
         return <LoanPage user={user} />;
 
- 
+ case "invest":
+  return <InvestmentOTPVerification/>
  case 'save': 
  return <SavingsPage />
       case "spend":

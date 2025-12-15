@@ -175,7 +175,8 @@ useEffect(() => {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-14 text-2xl font-bold text-center border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                  className="md:w-12 md:h-14 w-9 h-9 text-2xl font-bold text-center 
+                  border-1 md:border-2 border-gray-300 md:rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="one-time-code"

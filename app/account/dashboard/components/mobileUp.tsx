@@ -9,7 +9,7 @@ const MobileUp: React.FC<MobProps> = ({ currentView, setCurrentView }) => {
   const menuItems = [
     { id: 'home', label: 'Home' },
     { id: 'spend', label: 'Spend' },
-   { id: "save", label: "Save",},
+   { id: "invest", label: "Invest"},
        { id: 'card', label: 'Card' },
   ];
 
