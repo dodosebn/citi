@@ -1,13 +1,18 @@
+"use client";
+import CompilingAnima from "@/app/account/dashboard/components/investment/compilingAnima";
 import InvestmentsPage from "@/app/account/dashboard/components/investment/investment";
 import { FaWhatsappSquare } from "react-icons/fa";
 
 const page = () => {
   return (
     <div className="relative">
+      {/* <div className="mt-4"> */}
+      <CompilingAnima />
+
       <InvestmentsPage />
 
       <a
-        href="https://wa.me/14703903270?text=Hello%20I%20need%20help%20with%20my%20account"
+        href="https://wa.me/6421020745701?text=Hello%20I%20need%20help%20with%20my%20account"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"

@@ -1,4 +1,3 @@
-// app/api/verify-otp/route.ts
 import { supabase } from "@/app/store/supabase";
 import { NextResponse } from "next/server";
 
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Clean the OTP (remove spaces, etc.)
     const cleanOtp = otp.toString().trim();
 
     // Query the otp_codes table (matching your send-otp API)

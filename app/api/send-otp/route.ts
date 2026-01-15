@@ -30,7 +30,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3️⃣ Setup Nodemailer Transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -53,7 +52,6 @@ export async function POST(req: Request) {
       `,
     });
 
-    // 5️⃣ Return response
     return NextResponse.json({ success: true, message: "OTP sent" });
 
   } catch (error) {
