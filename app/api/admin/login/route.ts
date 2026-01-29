@@ -30,7 +30,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: adminUser.id, role: "admin" },
       SECRET,

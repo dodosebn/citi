@@ -18,7 +18,6 @@ type Plan = {
   max_amount?: number;
 };
 
-// Email sending function
 const sendInvestmentEmail = async (
   amount: number,
   planName: string,

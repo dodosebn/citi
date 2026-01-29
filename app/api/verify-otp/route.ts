@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    console.log("📊 Database query result:", { data, error });
+    console.log(" Database query result:", { data, error });
 
     if (error) {
       console.error("❌ Database error:", error);

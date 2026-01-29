@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       birthday,
       gender,
       pin,
-      documents, // Array of uploaded document paths
+      documents, 
     } = await req.json();
 
     if (!fname || !lname || !email || !password || !birthday || !gender || !pin) {
@@ -30,7 +30,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email already in use" }, { status: 400 });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Store only the first document path (or null if none)
