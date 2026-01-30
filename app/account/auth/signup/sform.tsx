@@ -56,7 +56,6 @@ const Sform = () => {
     }
     setLoading(true);
 
-    // ✅ Save only in Zustand, not DB yet
     setSignupData({
       fname: formData.fname,
       lname: formData.lname,
@@ -66,7 +65,7 @@ const Sform = () => {
 
     toast.success("Proceed to complete your profile", { position: "top-right" });
 
-    setTimeout(() => router.push("/account/personalCredentials"), 2000);
+    setTimeout(() => router.push("/account/auth/personalCredentials"), 2000);
   };
 
   return (
@@ -84,7 +83,6 @@ const Sform = () => {
           </div>
         </div>
 
-        {/* First Name */}
         <div className="flex flex-col">
           <label htmlFor="fname" className="mb-1 text-sm font-medium text-gray-700">
             First Name
@@ -103,7 +101,6 @@ const Sform = () => {
           </div>
         </div>
 
-        {/* Last Name */}
         <div className="flex flex-col">
           <label htmlFor="lname" className="mb-1 text-sm font-medium text-gray-700">
             Last Name
@@ -122,7 +119,6 @@ const Sform = () => {
           </div>
         </div>
 
-        {/* Email */}
         <div className="flex flex-col">
           <label htmlFor="email" className="mb-1 text-sm font-medium text-gray-700">
             Email
@@ -203,7 +199,7 @@ const Sform = () => {
 
         <p className="text-sm text-gray-600 text-center">
           Already have an account?{" "}
-          <Link href="/account/login" className="text-red-600 hover:underline">
+          <Link href="/account/auth/login" className="text-red-600 hover:underline">
             Login
           </Link>
         </p>

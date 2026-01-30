@@ -29,7 +29,7 @@ const PersonalCredentials = () => {
         activeEl?.tagName === "SELECT" ||
         activeEl?.tagName === "TEXTAREA";
 
-      if (isTypingInInput) return; // ignore key presses while typing in fields
+      if (isTypingInInput) return;
 
       if (/^[0-9]$/.test(e.key)) addPinDigit(Number(e.key));
       if (e.key === "Backspace") backspacePin();
@@ -46,7 +46,7 @@ const PersonalCredentials = () => {
       toast.error("Please complete all fields.");
       return;
     }
-    router.push("/account/upload");
+    router.push("/account/auth/upload");
   };
 
   return (

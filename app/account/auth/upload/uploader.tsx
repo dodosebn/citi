@@ -28,7 +28,6 @@ const UpLoader: React.FC = () => {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [currentStep, setCurrentStep] = useState<SignupStep>("upload");
   
-  // OTP related states
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [otpSending, setOtpSending] = useState<boolean>(false);
   const [otpVerifying, setOtpVerifying] = useState<boolean>(false);
@@ -44,9 +43,8 @@ const UpLoader: React.FC = () => {
     "image/webp",
     "application/pdf",
   ];
-  const maxSize: number = 10 * 1024 * 1024; // 10MB
+  const maxSize: number = 10 * 1024 * 1024; 
 
-  // Check if bucket exists on component mount
   useEffect(() => {
     checkBucketExists();
   }, []);
@@ -55,7 +53,6 @@ const UpLoader: React.FC = () => {
     try {
       console.log("🔍 Checking if 'documents' bucket exists...");
       
-      // List all buckets to see what's available
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
@@ -65,13 +62,11 @@ const UpLoader: React.FC = () => {
       
       console.log("📦 Available buckets:", buckets);
       
-      // Check specifically for 'documents' bucket
       const documentsBucket = buckets?.find(bucket => bucket.name === "documents");
       
       if (documentsBucket) {
         console.log("✅ 'documents' bucket found!");
         
-        // Try to list files to verify access
         const { data: files, error: filesError } = await supabase.storage
           .from("documents")
           .list();
@@ -174,7 +169,7 @@ const UpLoader: React.FC = () => {
   const handleUploadAndSendOTP = async (): Promise<void> => {
     if (!signupData) {
       toast.error("Signup data missing. Please start again.");
-      router.push("/account/signup");
+      router.push("/account/auth/signup");
       return;
     }
 
@@ -183,7 +178,6 @@ const UpLoader: React.FC = () => {
       return;
     }
 
-    // Show confirmation toast before starting
     toast.info(
       <div>
         <strong>Starting Upload Process</strong>
@@ -200,13 +194,11 @@ const UpLoader: React.FC = () => {
       console.log("🚀 Starting upload process...");
       console.log("📁 Files to upload:", files.map(f => f.name));
       
-      // Step 1: Upload files to Supabase
       const paths: string[] = [];
       let uploadSuccessCount = 0;
 
       for (const [index, item] of files.entries()) {
         const file = item.file;
-        // Clean filename to avoid issues
         const cleanFileName = file.name
           .toLowerCase()
           .replace(/[^a-z0-9._-]/g, '_')
@@ -218,7 +210,6 @@ const UpLoader: React.FC = () => {
 
         console.log(`📤 Uploading (${index + 1}/${files.length}): ${file.name}`);
         
-        // Show progress toast
         const progress = Math.round(((index + 1) / files.length) * 100);
         toast.info(
           <div>
@@ -280,7 +271,6 @@ const UpLoader: React.FC = () => {
         uploadSuccessCount++;
       }
 
-      // All uploads successful
       toast.success(
         <div>
           <strong>Upload Complete! ✅</strong>
@@ -296,10 +286,8 @@ const UpLoader: React.FC = () => {
       setUploadedPaths(paths);
       console.log("📝 All upload paths:", paths);
 
-      // Small delay before showing OTP sending toast
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Show OTP sending toast
       toast.info(
         <div>
           <strong>Sending OTP</strong>
@@ -309,7 +297,6 @@ const UpLoader: React.FC = () => {
         { autoClose: 2000 }
       );
 
-      // Step 2: Send OTP to user's email
       console.log("📧 Sending OTP to:", signupData.email);
       const otpRes = await fetch("/api/send-otp", {
         method: "POST",
@@ -327,7 +314,6 @@ const UpLoader: React.FC = () => {
         return;
       }
 
-      // OTP sent successfully
       toast.success(
         <div>
           <strong>OTP Sent! ✉️</strong>
@@ -346,7 +332,6 @@ const UpLoader: React.FC = () => {
       setOtpSending(false);
       setCurrentStep("otp");
       
-      // Focus first OTP input
       setTimeout(() => otpInputRefs.current[0]?.focus(), 100);
 
     } catch (error) {
@@ -360,7 +345,6 @@ const UpLoader: React.FC = () => {
     }
   };
 
-  // Handle OTP input
   const handleOtpChange = (index: number, value: string): void => {
     if (!/^\d*$/.test(value)) return; // Only digits
 
@@ -368,7 +352,6 @@ const UpLoader: React.FC = () => {
     newOtp[index] = value.slice(-1); // Only last character
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (value && index < 5) {
       otpInputRefs.current[index + 1]?.focus();
     }
@@ -388,7 +371,6 @@ const UpLoader: React.FC = () => {
     const newOtp = pastedData.split("").concat(Array(6).fill("")).slice(0, 6);
     setOtp(newOtp);
 
-    // Focus last filled input or first empty
     const nextIndex = Math.min(pastedData.length, 5);
     otpInputRefs.current[nextIndex]?.focus();
   };
@@ -409,13 +391,11 @@ const UpLoader: React.FC = () => {
 
     console.log("🔐 Verifying OTP:", otpCode);
     
-    // Show verifying toast
     toast.info("Verifying OTP...", { autoClose: 2000 });
     
     setOtpVerifying(true);
 
     try {
-      // Verify OTP with database
       const { data: otpData, error: otpError } = await supabase
         .from("otp_codes")
         .select("*")
@@ -478,7 +458,7 @@ const UpLoader: React.FC = () => {
         
         setCurrentStep("complete");
         setUploadStatus("success");
-        setTimeout(() => router.push("/account/login"), 3000);
+        setTimeout(() => router.push("/account/auth/login"), 3000);
       }
     } catch (error) {
       console.error("🔥 OTP verification error:", error);

@@ -1,38 +1,73 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { supabase } from "@/app/store/supabase";
+import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
-  const { token, password } = await req.json();
+  try {
+    const { email } = await req.json();
 
-  if (!token || !password) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({
+        message: "If the email exists, a reset link was sent.",
+      });
+    }
+
+    const { data: user } = await supabase
+      .from("citisignup")
+      .select("id, email")
+      .eq("email", email)
+      .single();
+
+    if (!user) {
+      return NextResponse.json({
+        message: "If the email exists, a reset link was sent.",
+      });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    await supabase.from("password_resets").insert({
+      user_id: user.id,
+      token_hash: tokenHash,
+      expires_at: new Date(Date.now() + 1000 * 60 * 30).toISOString(), 
+    });
+
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
+    const resetUrl = `${origin}/account/resetpassword?token=${rawToken}`;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.NODE_EMAIL,
+        pass: process.env.NODE_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"City Bank" <${process.env.NODE_EMAIL}>`,
+      to: email,
+      subject: "Password Reset Link",
+      text: `Click the link to reset your password: ${resetUrl}`,
+      html: `
+        <div style="font-family:Arial;font-size:15px">
+          <p>Click the link below to reset your password. It will expire in 30 minutes:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+        </div>
+      `,
+    });
+
+    console.log("RESET LINK:", resetUrl);
+
+    return NextResponse.json({
+      message: "If the email exists, a reset link was sent.",
+    });
+  } catch (err) {
+    console.error("Reset request error:", err);
+    return NextResponse.json(
+      { error: "Internal server error." },
+      { status: 500 }
+    );
   }
-
-  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-
-  const { data: reset } = await supabase
-    .from("password_resets")
-    .select("id, user_id, expires_at")
-    .eq("token_hash", tokenHash)
-    .single();
-
-  if (!reset || new Date(reset.expires_at) < new Date()) {
-    return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  await supabase
-    .from("citisignup")
-    .update({ password: hashedPassword })
-    .eq("id", reset.user_id);
-
-  await supabase
-    .from("password_resets")
-    .delete()
-    .eq("id", reset.id);
-
-  return NextResponse.json({ message: "Password reset successful" });
 }

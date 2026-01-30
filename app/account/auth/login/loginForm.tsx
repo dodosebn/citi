@@ -99,7 +99,7 @@ const LoginForm = () => {
             <label htmlFor="password" className="mb-1 text-sm font-medium text-[#000]">
               Password
             </label>
-            <Link href="/account/resetpassword" className="text-[#03305c] text-sm">
+            <Link href="/account/auth/resetpassword" className="text-[#03305c] text-sm">
               Forgot Password
             </Link>
           </div>
@@ -134,7 +134,7 @@ const LoginForm = () => {
 
         <p className="text-sm text-gray-600 text-center">
           Don’t have an account?{" "}
-          <Link href="/account/signup" className="text-red-600 hover:underline">
+          <Link href="/account/auth/signup" className="text-red-600 hover:underline">
             Sign up
           </Link>
         </p>

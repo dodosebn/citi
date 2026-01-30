@@ -71,13 +71,13 @@ const Navbar = () => {
           </div>
 
           <div className="flex space-x-3 mr-5 ml-auto">
-            <Link href="/account/login">
+            <Link href="/account/auth/login">
               <button className="rounded-3xl px-4 py-1 bg-white text-[#03305c] border border-[#03305c] hover:border-[#e8742c] hover:text-[#e8742c] transition-colors text-sm font-bold">
                 Login
               </button>
             </Link>
 
-            <Link href="/account/signup">
+            <Link href="/account/auth/signup">
               <button className="rounded-2xl px-4 py-1 bg-[#03305c] hover:bg-[#e8742c] text-white transition-colors text-sm font-bold">
                 Open an Account
               </button>

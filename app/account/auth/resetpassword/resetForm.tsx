@@ -7,7 +7,6 @@ const ResetForm = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Memoized so it never desyncs across renders
   const token = useMemo(() => searchParams.get("token"), [searchParams]);
 
   const [password, setPassword] = useState("");
@@ -53,7 +52,7 @@ const ResetForm = () => {
       setSuccess(true);
 
       setTimeout(() => {
-        router.push("/login");
+        router.push("/account/auth/login");
       }, 2000);
     } catch (err: any) {
       setError(err.message);
@@ -70,7 +69,7 @@ const ResetForm = () => {
           This password reset link is invalid or has expired.
         </p>
         <button
-          onClick={() => router.push("/account/forgot-password")}
+          onClick={() => router.push("/account/auth/forgot-password")}
           className="bg-black text-white px-4 py-2 rounded"
         >
           Request a new link
@@ -85,9 +84,7 @@ const ResetForm = () => {
         <h1 className="text-xl font-semibold mb-2">
           Password reset successful 🎉
         </h1>
-        <p className="text-sm text-gray-600">
-          Redirecting you to login…
-        </p>
+        <p className="text-sm text-gray-600">Redirecting you to login…</p>
       </div>
     );
   }
@@ -97,13 +94,9 @@ const ResetForm = () => {
       onSubmit={handleSubmit}
       className="w-full max-w-md bg-white p-6 space-y-5 shadow-md rounded-md"
     >
-      <h1 className="text-xl font-semibold text-center">
-        Reset your password
-      </h1>
+      <h1 className="text-xl font-semibold text-center">Reset your password</h1>
 
-      {error && (
-        <p className="text-sm text-red-600 text-center">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
       <div>
         <label className="block text-sm mb-1">New password</label>
