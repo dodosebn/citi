@@ -101,7 +101,7 @@ const Navbar = () => {
             <Image src={logo} alt="logo" width={120} height={40} />
           </Link>
 
-          <Link href="/account/login">
+          <Link href="/account/auth/login">
             <button className="rounded-3xl px-3 py-1.5 bg-white text-[#03305c] border border-[#03305c] hover:border-[#e8742c] text-sm">
               Login
             </button>
@@ -113,7 +113,7 @@ const Navbar = () => {
       {isMobile && menubar && (
         <div className="bg-white px-4 py-3 pt-[3rem] space-y-7">
           
-          <Link href="/account/signup">
+          <Link href="/account/auth/signup">
             <button className="w-[70%] rounded-3xl py-3 bg-white text-[#03305c] border border-[#03305c] hover:border-[#e8742c] font-medium mb-2">
               Open an Account
             </button>

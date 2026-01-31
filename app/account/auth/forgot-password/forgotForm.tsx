@@ -52,9 +52,7 @@ const ForgotForm = () => {
         Forgot your password?
       </h1>
 
-      {error && (
-        <p className="text-sm text-red-600 text-center">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
       <div>
         <label className="block text-sm mb-1">Email address</label>

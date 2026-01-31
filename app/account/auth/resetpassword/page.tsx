@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 const Page = () => {
   return (
-      <div
+    <div
       className="relative min-h-screen flex items-center justify-center"
       style={{
         backgroundImage: `url(${foot.src})`,
