@@ -26,7 +26,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ user, onUpdateUser }) => {
         console.error("Error signing out:", error.message);
         return;
       }
-      window.location.href = "/account/login";
+      window.location.href = "/account/auth/login";
     } finally {
       setLoggingOut(false);
     }
