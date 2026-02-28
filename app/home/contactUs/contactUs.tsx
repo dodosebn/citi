@@ -103,14 +103,14 @@ export default function ContactUs() {
     {
       icon: Phone,
       title: '24/7 Customer Service',
-      details: ['+1-470-390-3270', 'TTY: +1-470-390-3270'],
+      details: ['+6421020745701', 'TTY: +6421020745701'],
       description: 'Available round the clock',
       color: 'from-blue-500 to-cyan-500'
     },
     {
       icon: Mail,
       title: 'Email Support',
-      details: ['customerservice@citi.com', 'support@citi.com'],
+      details: ['citibankingz@gmail.com', 'support@citi.com'],
       description: 'Response within 24 hours',
       color: 'from-purple-500 to-pink-500'
     },
@@ -223,12 +223,9 @@ export default function ContactUs() {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Contact Information & Quick Links */}
           <div className="lg:col-span-1 space-y-8">
-            {/* Contact Methods */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-[#0033A0] mb-6">Contact Methods</h2>
               

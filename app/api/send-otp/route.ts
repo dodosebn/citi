@@ -30,34 +30,53 @@ export async function POST(req: Request) {
       );
     }
 
+    const emailUser = process.env.NODE_EMAIL;
+    const emailPass = process.env.NODE_PASS;
+
+    if (!emailUser || !emailPass) {
+      console.error("❌ Email configuration missing (NODE_EMAIL or NODE_PASS)");
+      return NextResponse.json(
+        { error: "Email service configuration missing" },
+        { status: 500 }
+      );
+    }
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.NODE_EMAIL,
-        pass: process.env.NODE_PASS, 
+        user: emailUser,
+        pass: emailPass, 
       },
     });
 
-    await transporter.sendMail({
-      from: `"City Bank" <${process.env.EMAIL}>`,
-      to: email,
-      subject: "Your Verification OTP",
-      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
-      html: `
-        <div style="font-family:Arial;font-size:15px">
-          <p>Your OTP is:</p>
-          <h2>${otp}</h2>
-          <p>It expires in <b>5 minutes</b>.</p>
-        </div>
-      `,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"City Bank" <${process.env.EMAIL || emailUser}>`,
+        to: email,
+        subject: "Your Verification OTP",
+        text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+        html: `
+          <div style="font-family:Arial;font-size:15px">
+            <p>Your OTP is:</p>
+            <h2>${otp}</h2>
+            <p>It expires in <b>5 minutes</b>.</p>
+          </div>
+        `,
+      });
+    } catch (mailError: any) {
+      console.error("❌ Nodemailer Error:", mailError);
+      return NextResponse.json(
+        { error: "Failed to send email", details: mailError.message },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true, message: "OTP sent" });
 
-  } catch (error) {
-    console.error("OTP Error:", error);
+  } catch (error: any) {
+    console.error("💥 OTP Global Error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error.message },
       { status: 500 }
     );
   }
