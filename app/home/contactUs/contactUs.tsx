@@ -253,15 +253,17 @@ export default function ContactUs() {
                   <h3 className="font-bold text-red-800">Emergency Contact</h3>
                 </div>
                 <p className="text-red-700 text-sm mb-2">
-                  Lost or stolen card? Call immediately:
+                  Lost or stolen card? Send Us a Message  immediately:
                 </p>
                 <div className="bg-white p-3 rounded-lg border border-red-300">
-                  <a 
-                    href="tel:1-800-950-5114"
-                    className="text-lg font-bold text-red-800 text-center block hover:text-red-900"
-                  >
-                    +1-470-390-3270
-                  </a>
+               <a
+  href="https://wa.me/6421020745701"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-lg font-bold text-red-800 text-center block hover:text-red-900"
+>
+  +64-21-020-745-701
+</a>
                 </div>
               </div>
             </div>
